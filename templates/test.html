@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FX Spot Trading Dashboard</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; margin:0; padding:0; }
+    header { background-color:#2b3e50; color:white; padding:1rem; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.2); }
+    h1 { margin:0; font-size:1.8rem; letter-spacing:1px; }
+    main { padding:2rem; display:flex; flex-direction:column; gap:2rem; }
+    .pairs-container { display:flex; flex-wrap:wrap; gap:2rem; justify-content:center; }
+    .pair-card { background-color:white; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); padding:1rem 2rem; width:250px; text-align:center; transition: transform 0.2s, box-shadow 0.2s; }
+    .pair-card:hover { transform:translateY(-5px); box-shadow:0 8px 20px rgba(0,0,0,0.15); }
+    .pair-card h2 { margin:0; font-size:1.2rem; color:#2b3e50; }
+    .rate { font-size:2rem; color:#27ae60; margin:0.5rem 0; }
+    .trade-form { margin-top:1rem; }
+    .trade-form input, .trade-form select, .trade-form button { width:100%; padding:0.5rem; margin:0.3rem 0; border-radius:5px; border:1px solid #ccc; font-size:1rem; }
+    .trade-form button { background-color:#27ae60; color:white; border:none; cursor:pointer; transition: background-color 0.2s; }
+    .trade-form button:hover { background-color:#219150; }
+    .blotter { background-color:white; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); padding:1rem 2rem; overflow-x:auto; }
+    .blotter table { width:100%; border-collapse:collapse; }
+    .blotter th, .blotter td { padding:0.5rem 1rem; text-align:center; border-bottom:1px solid #ddd; }
+    .blotter th { background-color:#2b3e50; color:white; }
+    footer { text-align:center; padding:1rem; background-color:#2b3e50; color:white; }
+
+    /* Deal Ticket */
+    .deal-ticket { position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; border-radius:10px; padding:1rem 2rem; box-shadow:0 8px 20px rgba(0,0,0,0.3); display:none; z-index:1000; width:300px; }
+    .deal-ticket h3 { margin-top:0; text-align:center; color:#2b3e50; }
+    .deal-ticket button { display:block; margin:1rem auto 0 auto; padding:0.5rem 1rem; background-color:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer; }
+  </style>
+</head>
+<body>
+
+<header><h1>FX Spot Trading Dashboard</h1></header>
+
+<main>
+  <div class="pairs-container">
+    {% set counter = namespace(value=0) %}
+    {% for (k,v) in ccy_pair_info.items(): %}
+       {% set n = counter|string %}
+
+    <form class="trade-form" name="trade_form_{{n}}" method="POST" action="{{ url_for('execute_trade')}}">
+    <div class="pair-card" data-pair="{{k}}" data-rate="{{v}}">
+       <input type="hidden" name="pair" value="{{k}}">
+        <input type="hidden" name="rate" value="{{v}}">
+      <h2>{{k}}</h2>
+      <div class="rate">{{v}}</div>
+
+        <select name="direction">
+          <option value="Buy">Buy {{k[:3]}}</option>
+          <option value="Sell">Sell {{k[:3]}}</option>
+        </select>
+        <input class="base-amount" name="base_amount" type="text" placeholder="Amount ({{k[:3]}})" min="0">
+        <input class="counter-amount" name= "counter_amount" type="text" placeholder="Amount ({{k[3:]}})" min="0" readonly>
+        <button type="button">Execute Trade</button>
+
+    </div>
+        </form>
+    {% set counter.value = counter.value + 1 %}
+    {% endfor %}
+  </div>
+
+  <div class="blotter">
+    <h2>Trade Blotter</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Date & Time</th>
+          <th>Pair</th>
+          <th>Direction</th>
+          <th>Base Ccy</th>
+          <th>Base Amount</th>
+          <th>Counter Ccy</th>
+          <th>Counter Amount</th>
+          <th>Rate</th>
+        </tr>
+      </thead>
+      <tbody id="blotter-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Deal Ticket -->
+  <div class="deal-ticket" id="deal-ticket">
+    <h3>Trade Details</h3>
+    <div id="deal-content"></div>
+    <button id="close-ticket">Close</button>
+  </div>
+
+</main>
+
+<footer>FX Spot Trading &copy; 2025</footer>
+
+<script>
+function formatWithCommas(num, decimals = 2) {
+    if (!num && num !== 0) return "";
+    return Number(num).toLocaleString(undefined, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
+}
+
+function unformatNumber(str) {
+    return str.replace(/,/g, "");
+}
+
+document.querySelectorAll('.pair-card').forEach(card => {
+    const rate = parseFloat(card.dataset.rate);
+    const baseInput = card.querySelector('.base-amount');
+    const counterInput = card.querySelector('.counter-amount');
+
+    // Update counter amount dynamically
+    baseInput.addEventListener('input', () => {
+        let raw = baseInput.value;
+        let cursorPos = baseInput.selectionStart;
+
+        // Count digits before cursor
+        let digitsBeforeCursor = raw.slice(0, cursorPos).replace(/[^0-9.]/g,'').length;
+
+        let numeric = parseFloat(unformatNumber(raw));
+        if (isNaN(numeric)) {
+            counterInput.value = "";
+            return;
+        }
+
+        // Counter amount always 2 decimals
+        counterInput.value = formatWithCommas(numeric * rate, 2);
+
+        // Base amount max 2 decimals
+        baseInput.value = formatWithCommas(numeric, 2);
+
+        // Restore cursor
+        let formatted = baseInput.value;
+        let newPos = 0, digitsSeen = 0;
+        while (newPos < formatted.length && digitsSeen < digitsBeforeCursor) {
+            if (/\d/.test(formatted[newPos])) digitsSeen++;
+            newPos++;
+        }
+        baseInput.setSelectionRange(newPos, newPos);
+    });
+});
+
+// Handle trade execution
+const tradeButtons = document.querySelectorAll('.trade-form button');
+const blotterBody = document.getElementById('blotter-body');
+
+tradeButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const form = button.closest('.trade-form');
+        const card = button.closest('.pair-card');
+
+        const pair = card.dataset.pair;
+        const rate = parseFloat(card.dataset.rate);
+        const direction = form.querySelector('select').value;
+
+        const baseValueRaw = parseFloat(unformatNumber(form.querySelector('.base-amount').value));
+        const baseCcy = pair.slice(0,3);
+        const counterValueRaw = parseFloat(unformatNumber(form.querySelector('.counter-amount').value));
+        const counterCcy = pair.slice(-3);
+
+        if (isNaN(baseValueRaw) || baseValueRaw <= 0) {
+            return alert("Enter a valid trade amount!");
+        }
+
+        const now = new Date();
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${now.toLocaleDateString()} ${now.toLocaleTimeString()}</td>
+            <td>${pair}</td>
+            <td>${direction}</td>
+            <td>${baseCcy}</td>
+            <td>${formatWithCommas(baseValueRaw, 2)}</td>
+            <td>${counterCcy}</td>
+            <td>${formatWithCommas(counterValueRaw, 2)}</td>
+            <td>${rate}</td>
+        `;
+
+        // Double-click to show deal ticket
+        row.addEventListener('dblclick', () => showDealTicket({
+            datetime: `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`,
+            pair, direction,
+            base: `${formatWithCommas(baseValueRaw, 2)} (${baseCcy})`,
+            counter: `${formatWithCommas(counterValueRaw, 2)} (${counterCcy})`,
+            rate
+        }));
+
+        blotterBody.prepend(row);
+
+        // Reset fields
+        form.querySelector('.base-amount').value = "";
+        form.querySelector('.counter-amount').value = "";
+    });
+});
+
+// Deal ticket handling
+const dealTicket = document.getElementById('deal-ticket');
+const dealContent = document.getElementById('deal-content');
+const closeTicketBtn = document.getElementById('close-ticket');
+
+function showDealTicket(trade) {
+    dealContent.innerHTML = `
+        <p><strong>Date & Time:</strong> ${trade.datetime}</p>
+        <p><strong>Pair:</strong> ${trade.pair}</p>
+        <p><strong>Direction:</strong> ${trade.direction}</p>
+        <p><strong>Base Amount:</strong> ${trade.base}</p>
+        <p><strong>Counter Amount:</strong> ${trade.counter}</p>
+        <p><strong>Rate:</strong> ${trade.rate}</p>
+    `;
+    dealTicket.style.display = 'block';
+}
+
+closeTicketBtn.addEventListener('click', () => { dealTicket.style.display = 'none'; });
+window.addEventListener('click', e => { if (e.target === dealTicket) dealTicket.style.display = 'none'; });
+</script>
+
+
+
+</body>
+</html>
