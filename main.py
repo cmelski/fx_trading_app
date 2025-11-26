@@ -19,9 +19,11 @@ import sys, shutil, os.path
 from flask import send_file
 
 from utilities import db_create
+from utilities import generic_utilities as gu
 from utilities.db_common_functions import DB_Common
 from utilities.db_connect import DB_Connect
 from utilities.fx_rate_api_utility import FXRateAPIUtility
+from flask_caching import Cache
 
 '''
 Make sure the required packages are installed: 
@@ -41,6 +43,9 @@ load_dotenv(file_path)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config["CACHE_TYPE"] = "SimpleCache"  # in-memory cache
+app.config["CACHE_DEFAULT_TIMEOUT"] = 300  # 5 minutes
+cache = Cache(app)
 
 db_create.create_db()
 db_create.create_table()
@@ -59,16 +64,56 @@ def to_dict(self):
         return dictionary
 
 
-@app.route('/')
-def home():
+@cache.cached()
+def get_rates_api():
     ccy_pairs = DB_Common().retrieve_ccy_pairs()
     currencies_for_api = [ccy_pair[1] for ccy_pair in ccy_pairs]
     print(currencies_for_api)
     fx_rate_api = FXRateAPIUtility()
-    ccy_pair_info = fx_rate_api.get(currencies_for_api)
+    ccy_pair_info = fx_rate_api.get_from_api(currencies_for_api)
+    return ccy_pair_info
+
+
+def generate_rates():
+    now = datetime.datetime.now()
+    formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")  # e.g., '2025-11-14 14:30:45
+    ccy_pairs = DB_Common().retrieve_ccy_pairs()
+    currencies_for_db = [(ccy_pair[1], ccy_pair[2], ccy_pair[4]) for ccy_pair in ccy_pairs]
+    print(currencies_for_db)
+    ccy_pair_info = DB_Common().retrieve_rates(currencies_for_db)
+    ccy_pair_info_updated = gu.generate_random_rates(ccy_pair_info)
+    DB_Common().delete_rates()
+    for (k, v) in ccy_pair_info_updated.items():
+        DB_Common().insert_spot_rate(formatted_time, k, v[0])
+
+    print(f'ccy_pair_info_updated: {ccy_pair_info_updated}')
+    return ccy_pair_info_updated
+
+
+@app.route('/api/fetch_rates', methods=['GET'])
+def fetch_rates():
+    rates = generate_rates()
+
+    # Convert each tuple to a dictionary
+
+    return jsonify({
+        "message": "Rates returned successfully",
+        "rates": rates
+    })
+
+@app.template_filter('format_million')
+def format_million(value):
+    return f"{value/1_000_000:.2f}M"  # 5000000 -> 5.00M
+
+@app.template_filter('format_number')
+def format_number(value):
+    return "{:,.2f}".format(float(value.replace(',', '')))  # 5000000 -> 5,000,000
+
+
+@app.route('/')
+def home():
+    ccy_pair_info = generate_rates()
     print(ccy_pair_info)
-    for (k, v) in ccy_pair_info.items():
-        print(k, v)
 
     trades = DB_Common().retrieve_trades()
 
@@ -90,13 +135,37 @@ def execute_trade():
         counter_ccy_amount = request.form["counter_amount"]
         counter_ccy = ccy_pair[3:]
         rate = request.form["rate"]
+        markup = request.form["pip-markup"]
+
+        if str(markup) == '0':
+            dealt_rate = rate
+            profit = '0.00'
+        else:
+            markup = float(markup) / 10000
+            if direction == 'Buy':
+                dealt_rate = round(float(rate) + float(markup), 4)
+
+                profit = round((float(base_amount.replace(',', '')) * float(dealt_rate) -
+                                float(counter_ccy_amount.replace(',', ''))), 2)
+                counter_ccy_amount = float(base_amount.replace(',', '')) * dealt_rate
+
+            else:
+                dealt_rate = round(float(rate) - float(markup), 4)
+                counter_ccy_amount = float(base_amount.replace(',', '')) * dealt_rate
+                profit = round((float(base_amount.replace(',', '')) * float(rate) -
+                                float(str(counter_ccy_amount).replace(',', ''))), 2)
+
 
         trade_details.extend([trade_status, timestamp, ccy_pair, direction, base_ccy, base_amount,
-                              counter_ccy, counter_ccy_amount, rate])
+                              counter_ccy, str(counter_ccy_amount), rate, dealt_rate, str(markup), str(profit)])
 
         print(trade_details)
 
+        #response = DB_Common().check_position(ccy_pair, base_amount, direction)
+
+        #if response['status'] == 'ok':
         DB_Common().execute_trade(trade_details)
+        update_position = DB_Common().update_position(ccy_pair, base_amount, direction)
 
         return redirect(url_for("home"))
 

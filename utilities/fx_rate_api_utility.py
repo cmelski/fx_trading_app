@@ -2,6 +2,7 @@ import json
 import os
 import requests
 from utilities.logging_utility import logging_format as logger
+from utilities.db_connect import DB_Connect
 
 
 class FXRateAPIUtility:
@@ -9,7 +10,7 @@ class FXRateAPIUtility:
     def __init__(self):
         self.base_url = 'https://v6.exchangerate-api.com/v6/6e63152bbe49578c46175711/latest/'
 
-    def get(self, ccy_pairs=None):
+    def get_from_api(self, ccy_pairs=None):
 
         rates = dict()
 
@@ -22,5 +23,9 @@ class FXRateAPIUtility:
             logger().info(fx_rate)
             rates[ccy_pair] = fx_rate
 
+            print('API getting rates...')
+
         return rates
+
+
 

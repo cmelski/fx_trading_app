@@ -64,9 +64,23 @@ def create_table():
                             base_amount VARCHAR(50) NOT NULL,
                             counter_ccy VARCHAR(3) NOT NULL,
                             counter_ccy_amount VARCHAR(50) NOT NULL,
-                            rate VARCHAR(20)
+                            rate VARCHAR(20),
+                            dealt_rate VARCHAR(20),
+                            markup VARCHAR(20),
+                            profit VARCHAR(50)
                         );
                     """)
+
+        # rate table
+
+            cur.execute("""
+                                CREATE TABLE IF NOT EXISTS spot_rate (
+                                    rate_id SERIAL PRIMARY KEY,
+                                    timestamp VARCHAR(50) NOT NULL,
+                                    ccy_pair VARCHAR(6) NOT NULL,
+                                    spot_rate VARCHAR(20)
+                                );
+                            """)
             # cur.execute("""
             #     CREATE TABLE IF NOT EXISTS list (
             #         id SERIAL PRIMARY KEY,

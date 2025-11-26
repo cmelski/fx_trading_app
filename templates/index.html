@@ -4,98 +4,341 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FX Spot Trading Dashboard</title>
-  <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; margin:0; padding:0; }
-    header { background-color:#2b3e50; color:white; padding:1rem; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.2); }
-    h1 { margin:0; font-size:1.8rem; letter-spacing:1px; }
-    main { padding:2rem; display:flex; flex-direction:column; gap:2rem; }
-    .pairs-container { display:flex; flex-wrap:wrap; gap:2rem; justify-content:center; }
-    .pair-card { background-color:white; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); padding:1rem 2rem; width:250px; text-align:center; transition: transform 0.2s, box-shadow 0.2s; }
-    .pair-card:hover { transform:translateY(-5px); box-shadow:0 8px 20px rgba(0,0,0,0.15); }
-    .pair-card h2 { margin:0; font-size:1.2rem; color:#2b3e50; }
-    .rate { font-size:2rem; color:#27ae60; margin:0.5rem 0; }
-    .trade-form { margin-top:1rem; }
-    .trade-form input, .trade-form select, .trade-form button { width:100%; padding:0.5rem; margin:0.3rem 0; border-radius:5px; border:1px solid #ccc; font-size:1rem; }
-    .trade-form button { background-color:#27ae60; color:white; border:none; cursor:pointer; transition: background-color 0.2s; }
-    .trade-form button:hover { background-color:#219150; }
-    .blotter { background-color:white; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); padding:1rem 2rem; overflow-x:auto; }
-    .blotter table { width:100%; border-collapse:collapse; }
-    .blotter th, .blotter td { padding:0.5rem 1rem; text-align:center; border-bottom:1px solid #ddd; }
-    .blotter th { background-color:#2b3e50; color:white; }
-    footer { text-align:center; padding:1rem; background-color:#2b3e50; color:white; }
 
-    /* Deal Ticket */
-    .deal-ticket { position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; border-radius:10px; padding:1rem 2rem; box-shadow:0 8px 20px rgba(0,0,0,0.3); display:none; z-index:1000; width:300px; }
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f8;
+      margin:0;
+      padding:0;
+      height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
+
+    header {
+      background-color:#2b3e50;
+      color:white;
+      padding:1rem;
+      text-align:center;
+      box-shadow:0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    h1 { margin:0; font-size:1.8rem; letter-spacing:1px; }
+
+    /* New Layout Structure */
+    main {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      padding:0;
+    }
+
+    /* Top section: trading panels + statistics */
+    .top-section {
+      flex: 2;
+      display:flex;
+      padding:1rem 2rem;
+      gap:1.5rem;
+    }
+
+    .left-panels {
+      flex: 2;
+      display:flex;
+      flex-wrap:wrap;
+      gap:1.5rem;
+      align-content:flex-start;
+    }
+
+    .right-stats {
+      flex: 1;
+      background:white;
+      border-radius:10px;
+      padding:1rem 2rem;
+      box-shadow:0 4px 10px rgba(0,0,0,0.1);
+      height:fit-content;
+    }
+
+    .right-stats h2 {
+      margin-top:0;
+      color:#2b3e50;
+      text-align:center;
+    }
+
+    .pair-card {
+  background-color:white;
+  border-radius:8px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.08);
+
+  /* Smaller panel */
+  padding: 1rem 1rem 0.6rem 1rem; /* more top padding */
+  width:180px;
+
+  text-align:center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+    .pair-card:hover {
+      transform:translateY(-5px);
+      box-shadow:0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .pair-card h2 {
+  margin:0;
+  font-size:1rem;        /* smaller */
+  color:#2b3e50;
+}
+    .rate {
+  font-size:1.4rem;       /* smaller */
+  margin:0.3rem 0;
+}
+.pair-card .max-limit {
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    font-size: 0.7rem;
+    color: #999;
+}
+
+ .trade-form input,
+.trade-form select,
+.trade-form button {
+  width:100%;
+  padding:0.35rem;        /* smaller controls */
+  margin:0.25rem 0;
+  border-radius:4px;
+  font-size:0.85rem;      /* smaller font */
+}
+
+.trade-form button {
+  background-color:#27ae60;
+  color:white;
+  border:none;
+  cursor:pointer;
+}
+
+    .trade-form button:hover { background-color:#219150; }
+
+    /* Bottom Blotter Section */
+    .bottom-section {
+      flex: 1;
+      padding:1rem 2rem;
+    }
+
+    .blotter {
+      background-color:white;
+      border-radius:10px;
+      box-shadow:0 4px 10px rgba(0,0,0,0.1);
+      padding:1rem 2rem;
+      overflow-x:auto;
+      height:100%;
+    }
+
+    .blotter table { width:100%; border-collapse:collapse; }
+
+    .blotter th,
+    .blotter td {
+      padding:0.5rem 1rem;
+      text-align:center;
+      border-bottom:1px solid #ddd;
+    }
+
+    .blotter th { background-color:#2b3e50; color:white; }
+
+    footer {
+      text-align:center;
+      padding:1rem;
+      background-color:#2b3e50;
+      color:white;
+    }
+
+    /* Deal Ticket (unchanged) */
+    .deal-ticket {
+      position:fixed;
+      top:50%;
+      left:50%;
+      transform:translate(-50%, -50%);
+      background:white;
+      border-radius:10px;
+      padding:1rem 2rem;
+      box-shadow:0 8px 20px rgba(0,0,0,0.3);
+      display:none;
+      z-index:1000;
+      width:300px;
+    }
     .deal-ticket h3 { margin-top:0; text-align:center; color:#2b3e50; }
-    .deal-ticket button { display:block; margin:1rem auto 0 auto; padding:0.5rem 1rem; background-color:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer; }
+
+    /* Temporary highlight animation */
+.flash-green {
+    background-color: #28a745 !important;
+    transition: background-color 1s ease-out;
+}
+
+    .position-container {
+    width: 100%;
+    height: 10px;
+    border: 1px solid #999;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #f5f5f5;
+}
+
+.position-bar {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.pos-left, .pos-right {
+    width: 50%;
+    height: 100%;
+    background-color: transparent;
+    position: relative;
+}
+
+.fill-left, .fill-right {
+    height: 100%;
+    width: 0%;
+    position: absolute;
+    top: 0;
+    transition: width 0.3s;
+}
+
+.fill-left {
+    left: auto;
+    right: 0;   /* fill from center to left */
+    background-color: red;
+}
+
+.fill-right {
+    left: 0;    /* fill from center to right */
+    background-color: green;
+}
+
+
   </style>
 </head>
+
 <body>
 
 <header><h1>FX Spot Trading Dashboard</h1></header>
 
 <main>
-  <div class="pairs-container">
-    {% set counter = namespace(value=0) %}
-    {% for (k,v) in ccy_pair_info.items(): %}
-       {% set n = counter|string %}
 
-    <form method="POST" action="{{ url_for('execute_trade')}}" class="trade-form" name="trade_form_{{n}}">
-    <div class="pair-card" data-pair="{{k}}" data-rate="{{v}}">
-       <input type="hidden" name="pair" value="{{k}}">
-        <input type="hidden" name="rate" value="{{v}}">
-      <h2>{{k}}</h2>
-      <div class="rate">{{v}}</div>
+  <!-- TOP SECTION -->
+  <div class="top-section">
 
-        <select name="direction">
-          <option value="Buy">Buy {{k[:3]}}</option>
-          <option value="Sell">Sell {{k[:3]}}</option>
-        </select>
-        <input class="base-amount" name="base_amount" type="text" placeholder="Amount ({{k[:3]}})" min="0">
-        <input class="counter-amount" name= "counter_amount" type="text" placeholder="Amount ({{k[3:]}})" min="0" readonly>
-        <button type="submit">Execute Trade</button>
+    <!-- LEFT: Trading Panels -->
+    <div class="left-panels">
+      {% set counter = namespace(value=0) %}
+      {% for (k,v) in ccy_pair_info.items(): %}
+        {% set n = counter|string %}
 
+        <form method="POST" action="{{ url_for('execute_trade')}}" class="trade-form" name="trade_form_{{n}}">
+          <div class="pair-card" data-pair="{{k}}" data-rate="{{v[0]}}" data-maxBalance="{{v[1]}}" data-currentPosition="{{v[2]}}">
+            <div class="max-limit">Max: {{ v[1] | format_million }}</div>
+            <input type="hidden" name="pair" value="{{k}}">
+            <input id="{{k}}-hidden-rate" type="hidden" name="rate" value="{{v[0]}}">
+            <h2>{{k}}</h2>
+            <div id="{{k}}-rate" class="rate">{{v[0]}}</div>
+<div class="position-container" data-pair="{{k}}">
+  <div class="position-bar">
+    <div class="pos-left">
+      <div class="fill-left"></div>
     </div>
+    <div class="pos-right">
+      <div class="fill-right"></div>
+    </div>
+  </div>
+</div>
+
+
+
+            <select name="direction">
+              <option value="Buy">Buy {{k[:3]}}</option>
+              <option value="Sell">Sell {{k[:3]}}</option>
+            </select>
+
+            <input class="base-amount" name="base_amount" type="text" placeholder="Amount ({{k[:3]}})" min="0">
+            <input class="counter-amount" name="counter_amount" type="text" placeholder="Amount ({{k[3:]}})" min="0" readonly>
+            <label for="markup">Markup (pips): <span class="markup-value-pips" id="markup-value">0</span></label>
+<input
+  type="range"
+  class="markup-pips"
+  id="markup"
+  name="pip-markup"
+  min="0"
+  max="1000"
+  step="1"
+  value="0"
+/>
+            <button class="submit-trade" type="submit">Deal</button>
+          </div>
         </form>
-    {% set counter.value = counter.value + 1 %}
-    {% endfor %}
+
+        {% set counter.value = counter.value + 1 %}
+      {% endfor %}
+    </div>
+
+    <!-- RIGHT: Statistics Panel -->
+  <div class="right-stats">
+  <h2>Trading Statistics</h2>
+  <p>Total Trades: <span id="total-trades">{{ trades|length }}</span></p>
+  <p>Last Trade: <span id="last-trade">
+      {% if trades %} {{ trades[-1][3] }} {% else %} None {% endif %}
+  </span></p>
+  <p>Most Frequent Ccy Pair: <span id="most-frequent-pair">-</span></p>
+    <p>Largest Trade: <span id="largest-trade">-</span></p>
+</div>
+
+
   </div>
 
-  <div class="blotter">
-    <h2>Trade Blotter</h2>
-    <table>
-      <thead>
+  <!-- BOTTOM SECTION: BLOTTER -->
+  <div class="bottom-section">
+    <div class="blotter">
+      <h2>Trade Blotter</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Trade ID</th>
+            <th>Status</th>
+            <th>Timestamp</th>
+            <th>Pair</th>
+            <th>Direction</th>
+            <th>Base Ccy</th>
+            <th>Base Amount</th>
+            <th>Counter Ccy</th>
+            <th>Counter Amount</th>
+            <th>Spot Rate</th>
+            <th>Dealt Rate</th>
+            <th>Markup (pips)</th>
+            <th>Profit</th>
+          </tr>
+        </thead>
+        <tbody id="blotter-body">
+
+        {% for i in range(0,trades|length): %}
+
         <tr>
-          <th>Status</th>
-          <th>Timestamp</th>
-          <th>Pair</th>
-          <th>Direction</th>
-          <th>Base Ccy</th>
-          <th>Base Amount</th>
-          <th>Counter Ccy</th>
-          <th>Counter Amount</th>
-          <th>Rate</th>
-        </tr>
-      </thead>
-      <tbody id="blotter-body">
+          <td>{{trades[i][0]}}</td>
+    <td>{{trades[i][1]}}</td>
+    <td>{{trades[i][2]}}</td>
+    <td>{{trades[i][3]}}</td>
+    <td>{{trades[i][4]}}</td>
+    <td>{{trades[i][5]}}</td>
+    <td>{{trades[i][6]}}</td>
+    <td>{{trades[i][7]}}</td>
+    <td>{{trades[i][8] | format_number}}</td>
+    <td>{{trades[i][9]}}</td>
+          <td>{{trades[i][10]}}</td>
+          <td>{{trades[i][11]}}</td>
+          <td>{{trades[i][12] | format_number}}</td>
+</tr>
+        {% endfor %}
 
-      {% for i in range(0,trades|length): %}
-      <tr>
-        <td>{{trades[i][1]}}</td>
-        <td>{{trades[i][2]}}</td>
-        <td>{{trades[i][3]}}</td>
-        <td>{{trades[i][4]}}</td>
-        <td>{{trades[i][5]}}</td>
-        <td>{{trades[i][6]}}</td>
-        <td>{{trades[i][7]}}</td>
-        <td>{{trades[i][8]}}</td>
-        <td>{{trades[i][9]}}</td>
-      </tr>
-
-      {% endfor %}
-
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Deal Ticket -->
@@ -110,8 +353,13 @@
 <footer>FX Spot Trading &copy; 2025</footer>
 
 <script>
+
+
+/* -----------------------------
+   Helper functions
+----------------------------- */
 function formatWithCommas(num, decimals = 2) {
-    if (!num && num !== 0) return "";
+    if (num === undefined || num === null || num === "") return "";
     return Number(num).toLocaleString(undefined, {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals
@@ -122,76 +370,147 @@ function unformatNumber(str) {
     return str.replace(/,/g, "");
 }
 
+function updatePositionBar(pair, position, maxLimit) {
+    const container = document.querySelector(`.position-container[data-pair="${pair}"]`);
+    if (!container) return;
+
+    const fillLeft = container.querySelector(".fill-left");
+    const fillRight = container.querySelector(".fill-right");
+
+    const ratio = Math.min(Math.abs(position) / maxLimit, 1) * 100; // percent
+
+    if (position > 0) {
+        fillRight.style.width = `${ratio}%`;
+        fillLeft.style.width = `0%`;
+    } else if (position < 0) {
+        fillLeft.style.width = `${ratio}%`;
+        fillRight.style.width = `0%`;
+    } else {
+        fillLeft.style.width = `0%`;
+        fillRight.style.width = `0%`;
+    }
+}
+
+
+
+/* -----------------------------
+   Pair card input handling
+----------------------------- */
 document.querySelectorAll('.pair-card').forEach(card => {
-    const rate = parseFloat(card.dataset.rate);
     const baseInput = card.querySelector('.base-amount');
     const counterInput = card.querySelector('.counter-amount');
+    const slider = card.querySelector(".markup-pips");
+    const output = card.querySelector(".markup-value-pips");
+    const form = card.closest('form');
 
+    // dataset values
+    const tradeLimit = parseFloat(card.dataset.maxbalance) || 0;
+    let currentPosition = parseFloat(card.dataset.currentposition) || 0;
+
+    updatePositionBar(card.dataset.pair, currentPosition, tradeLimit);
+
+    if (!form || !baseInput || !counterInput) return;
+
+    /* -----------------------------
+       Markup slider
+    ----------------------------- */
+    if (slider && output) {
+        output.textContent = slider.value;
+        slider.addEventListener("input", () => {
+            output.textContent = slider.value;
+        });
+    }
+
+    /* -----------------------------
+       Base amount formatting & counter calculation
+    ----------------------------- */
     baseInput.addEventListener('input', () => {
-        let raw = baseInput.value;
-        let cursorPos = baseInput.selectionStart;
+        const raw = baseInput.value;
+        const cursorPos = baseInput.selectionStart;
+        const digitsBefore = raw.slice(0, cursorPos).replace(/[^0-9]/g, "").length;
 
-        // Count digits before cursor
-        let digitsBeforeCursor = raw.slice(0, cursorPos).replace(/[^0-9]/g,'').length;
-
-        // Parse numeric value
         let numeric = parseFloat(unformatNumber(raw));
         if (isNaN(numeric)) {
             counterInput.value = "";
             return;
         }
 
-        // Round to 2 decimals
-        numeric = Math.round(numeric * 100) / 100;
-        const counter = Math.round(numeric * rate * 100) / 100;
+        numeric = Number(numeric.toFixed(2));
+        const currentRate = parseFloat(card.dataset.rate) || 0;
+        const counter = Number((numeric * currentRate).toFixed(2));
 
-        // Format values
         const formattedBase = formatWithCommas(numeric, 2);
         const formattedCounter = formatWithCommas(counter, 2);
 
         baseInput.value = formattedBase;
         counterInput.value = formattedCounter;
 
-        // Restore cursor position relative to digits
-        let newPos = 0, digitsSeen = 0;
-        while (newPos < formattedBase.length && digitsSeen < digitsBeforeCursor) {
-            if (/\d/.test(formattedBase[newPos])) digitsSeen++;
-            newPos++;
+        // restore cursor
+        let pos = 0, count = 0;
+        while (pos < formattedBase.length && count < digitsBefore) {
+            if (/\d/.test(formattedBase[pos])) count++;
+            pos++;
         }
-        baseInput.setSelectionRange(newPos, newPos);
+        baseInput.setSelectionRange(pos, pos);
+    });
+
+    /* -----------------------------
+       Form submission & validation
+    ----------------------------- */
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const raw = (baseInput.value || "").trim();
+        if (!raw) {
+            alert("Enter a base amount before continuing.");
+            return;
+        }
+
+        const amount = parseFloat(unformatNumber(raw));
+        if (isNaN(amount) || amount <= 0) {
+            alert("Amount must be a positive number.");
+            return;
+        }
+
+        const dirSel = form.querySelector('select[name="direction"]');
+        const direction = dirSel ? dirSel.value : "Buy";
+        const signedAmount = direction.toLowerCase().startsWith("b") ? amount : -amount;
+
+        const newPosition = currentPosition + signedAmount;
+
+        if (Math.abs(newPosition) > tradeLimit) {
+            alert("Trade amount breaches limit.");
+            return;
+        }
+
+        currentPosition = newPosition;
+        card.dataset.currentposition = newPosition;
+        updatePositionBar(card.dataset.pair, currentPosition, tradeLimit);
+        form.submit();
+
     });
 });
 
-// Double-click deal ticket for persisted trades
-function attachDealTicket() {
-    document.querySelectorAll('#blotter-body tr').forEach(row => {
-        row.addEventListener('dblclick', () => {
-            const cells = row.children;
-            showDealTicket({
-                datetime: cells[1].innerText,
-                pair: cells[2].innerText,
-                direction: cells[3].innerText,
-                base: `${cells[5].innerText} (${cells[4].innerText})`,
-                counter: `${cells[7].innerText} (${cells[6].innerText})`,
-                rate: cells[8].innerText
-            });
-        });
-    });
-}
 
-// Deal ticket
+
+/* -----------------------------
+   Deal ticket logic
+----------------------------- */
 const dealTicket = document.getElementById('deal-ticket');
 const dealContent = document.getElementById('deal-content');
 const closeTicketBtn = document.getElementById('close-ticket');
 
 function showDealTicket(trade) {
     dealContent.innerHTML = `
+        <p><strong>Trade ID:</strong> ${trade.id}</p>
+        <p><strong>Status:</strong> ${trade.status}</p>
         <p><strong>Date & Time:</strong> ${trade.datetime}</p>
         <p><strong>Pair:</strong> ${trade.pair}</p>
         <p><strong>Direction:</strong> ${trade.direction}</p>
         <p><strong>Base Amount:</strong> ${trade.base}</p>
         <p><strong>Counter Amount:</strong> ${trade.counter}</p>
-        <p><strong>Rate:</strong> ${trade.rate}</p>
+        <p><strong>Spot Rate:</strong> ${trade.rate}</p>
+        <p><strong>Dealt Rate:</strong> ${trade.dealt_rate}</p>
     `;
     dealTicket.style.display = 'block';
 }
@@ -199,10 +518,134 @@ function showDealTicket(trade) {
 closeTicketBtn.addEventListener('click', () => dealTicket.style.display = 'none');
 window.addEventListener('click', e => { if (e.target === dealTicket) dealTicket.style.display = 'none'; });
 
-// Attach to persisted trades
-attachDealTicket();
+function attachDealTicket() {
+    document.querySelectorAll('#blotter-body tr').forEach(row => {
+        row.addEventListener('dblclick', () => {
+            const cells = row.children;
+            showDealTicket({
+                id: cells[0].innerText,
+                status: cells[1].innerText,
+                datetime: cells[2].innerText,
+                pair: cells[3].innerText,
+                direction: cells[4].innerText,
+                base: `${cells[6].innerText} (${cells[5].innerText})`,
+                counter: `${cells[8].innerText} (${cells[7].innerText})`,
+                rate: cells[9].innerText,
+                dealt_rate: cells[10].innerText
+            });
+        });
+    });
+}
+
+/* -----------------------------
+   Trading stats update & highlight
+----------------------------- */
+function updateTradingStatsAndHighlight() {
+    const tableRows = document.querySelectorAll("#blotter-body tr");
+
+    // Update total trades
+    document.getElementById("total-trades").innerText = tableRows.length;
+
+    if (tableRows.length === 0) {
+        document.getElementById("last-trade").innerText = "-";
+        document.getElementById("most-frequent-pair").innerText = "-";
+        document.getElementById("largest-trade").innerText = "-";
+        return;
+    }
+
+    // Newest trade = FIRST row
+    const newestRow = tableRows[0];
+    const lastTrade = newestRow.querySelector("td:nth-child(4)").innerText.trim();
+    document.getElementById("last-trade").innerText = lastTrade;
+
+    // Count occurrences of pairs
+    const pairValues = Array.from(tableRows).map(
+        row => row.querySelector("td:nth-child(4)").innerText.trim()
+    );
+
+    const counts = {};
+    pairValues.forEach(p => counts[p] = (counts[p] || 0) + 1);
+
+    // Find max count
+    const maxCount = Math.max(...Object.values(counts));
+
+    // Get all pairs that match the max count (tie logic)
+    const topPairs = Object.keys(counts).filter(pair => counts[pair] === maxCount);
+
+    // Display: EURUSD (4), USDNOK (4)
+    document.getElementById("most-frequent-pair").innerText =
+        topPairs.map(p => `${p} (${maxCount})`).join(", ");
+
+     // get trade amounts
+    const amountValues = Array.from(tableRows).map(
+    //remove commas and then parseFloat
+        row => parseFloat(row.querySelector("td:nth-child(7)").innerText.trim().replace(/,/g, ''))
+    );
+
+    //get max amount
+
+    maxAmount = Math.max(...amountValues)
+
+
+
+    // Display max amount
+    document.getElementById("largest-trade").innerText = `$${formatWithCommas(maxAmount, 2)}`;
+
+    // Highlight FIRST row (newest trade)
+    newestRow.classList.add("flash-green");
+    setTimeout(() => newestRow.classList.remove("flash-green"), 5000);
+}
+
+
+
+
+/* -----------------------------
+   Initialize on page load
+----------------------------- */
+document.addEventListener("DOMContentLoaded", () => {
+    attachDealTicket();
+    updateTradingStatsAndHighlight();
+});
 </script>
 
+  <script>
+async function updateRates() {
+    try {
+        const response = await fetch("/api/fetch_rates");
+        const rates = await response.json();
+
+       document.querySelectorAll(".pair-card").forEach(card => {
+         const pair = card.dataset.pair;
+         const newRate = parseFloat(rates.rates[pair]);
+
+         card.dataset.rate = newRate;
+         document.getElementById(`${pair}-rate`).innerText = newRate;
+         document.getElementById(`${pair}-hidden-rate`).value = newRate;
+
+         const baseInput = card.querySelector(".base-amount");
+         const counterInput = card.querySelector(".counter-amount");
+
+         const raw = baseInput.value.replace(/,/g, "");
+         let numeric = parseFloat(raw);
+
+         if (isNaN(numeric)) return; // don't wipe counter amount
+
+         const counter = Math.round(numeric * newRate * 100) / 100;
+         counterInput.value = formatWithCommas(counter, 2);
+});
+
+
+    } catch (err) {
+        console.error("Failed to fetch latest rates:", err);
+    }
+
+
+}
+
+    // Apply every 10 seconds
+setInterval(updateRates, 10000);
+
+</script>
 
 
 
