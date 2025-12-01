@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import time
 from datetime import date, datetime
 import datetime
 import requests
@@ -82,9 +84,9 @@ def generate_rates():
     print(currencies_for_db)
     ccy_pair_info = DB_Common().retrieve_rates(currencies_for_db)
     ccy_pair_info_updated = gu.generate_random_rates(ccy_pair_info)
-    DB_Common().delete_rates()
+    # DB_Common().delete_rates()
     for (k, v) in ccy_pair_info_updated.items():
-        DB_Common().insert_spot_rate(formatted_time, k, v[0])
+        DB_Common().update_spot_rate(formatted_time, k, v[0])
 
     print(f'ccy_pair_info_updated: {ccy_pair_info_updated}')
     return ccy_pair_info_updated
@@ -101,9 +103,11 @@ def fetch_rates():
         "rates": rates
     })
 
+
 @app.template_filter('format_million')
 def format_million(value):
-    return f"{value/1_000_000:.2f}M"  # 5000000 -> 5.00M
+    return f"{value / 1_000_000:.2f}M"  # 5000000 -> 5.00M
+
 
 @app.template_filter('format_number')
 def format_number(value):
@@ -134,36 +138,36 @@ def execute_trade():
         base_ccy = ccy_pair[0:3]
         counter_ccy_amount = request.form["counter_amount"]
         counter_ccy = ccy_pair[3:]
-        rate = request.form["rate"]
+        # dealt rate
+        dealt_rate = request.form["rate"]
+        # spot rate
+        spot_rate = request.form["spot_rate"]
         markup = request.form["pip-markup"]
+        source = 'GUI'
+        print(markup)
 
         if str(markup) == '0':
-            dealt_rate = rate
             profit = '0.00'
         else:
             markup = float(markup) / 10000
-            if direction == 'Buy':
-                dealt_rate = round(float(rate) + float(markup), 4)
 
+            if direction == 'Buy':
+                print('reached here')
                 profit = round((float(base_amount.replace(',', '')) * float(dealt_rate) -
-                                float(counter_ccy_amount.replace(',', ''))), 2)
-                counter_ccy_amount = float(base_amount.replace(',', '')) * dealt_rate
+                                float(base_amount.replace(',', '')) * float(spot_rate)), 2)
 
             else:
-                dealt_rate = round(float(rate) - float(markup), 4)
-                counter_ccy_amount = float(base_amount.replace(',', '')) * dealt_rate
-                profit = round((float(base_amount.replace(',', '')) * float(rate) -
-                                float(str(counter_ccy_amount).replace(',', ''))), 2)
-
+                profit = round((float(base_amount.replace(',', '')) * float(spot_rate) -
+                                float(base_amount.replace(',', '')) * float(dealt_rate)), 2)
 
         trade_details.extend([trade_status, timestamp, ccy_pair, direction, base_ccy, base_amount,
-                              counter_ccy, str(counter_ccy_amount), rate, dealt_rate, str(markup), str(profit)])
+                              counter_ccy, str(counter_ccy_amount), spot_rate, dealt_rate, str(markup), str(profit), source])
 
         print(trade_details)
 
-        #response = DB_Common().check_position(ccy_pair, base_amount, direction)
+        # response = DB_Common().check_position(ccy_pair, base_amount, direction)
 
-        #if response['status'] == 'ok':
+        # if response['status'] == 'ok':
         DB_Common().execute_trade(trade_details)
         update_position = DB_Common().update_position(ccy_pair, base_amount, direction)
 

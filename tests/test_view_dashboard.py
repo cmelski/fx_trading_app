@@ -2,6 +2,7 @@ import asyncio
 import pytest
 from collections import Counter
 from tests.conftest import logger
+from utilities.db_common_functions import DB_Common
 
 
 @pytest.mark.asyncio
@@ -114,9 +115,6 @@ async def test_dashboard_stats(page):
     assert max_amount == largest_trade_stats
 
 
-
-
-
     # for i in range(trade_count):
     #     trade_row = trade_rows.nth(i)
     #
@@ -127,6 +125,54 @@ async def test_dashboard_stats(page):
     #         cell = cells.nth(j)
     #         text = await cell.inner_text()  # FIX: await
     #         logger.info(f"Cell[{i},{j}]: {text}")
+
+@pytest.mark.asyncio
+@pytest.mark.cards
+async def test_dashboard_cards(page):
+
+    #verify number of ccy pair cards
+
+    #GUI
+    cards = page.locator('div .pair-card')
+    cards_count = await cards.count()
+    logger.info(f'GUI card count: {cards_count}')
+
+    #DB
+
+    ccy_pair_info_db = DB_Common().retrieve_ccy_pairs()
+    logger.info(f'DB ccy pair count: {len(ccy_pair_info_db)}')
+
+    assert cards_count == len(ccy_pair_info_db)
+
+    #verify max position and current position per ccy pair
+
+    ccy_pair_card_gui = dict()
+
+    for i in range(cards_count):
+        ccy_pair = await cards.nth(i).get_attribute("data-pair")
+        max_balance = await cards.nth(i).get_attribute("data-maxbalance")
+        max_balance = str("{:.2f}".format(float(max_balance)))
+        current_position = await cards.nth(i).get_attribute("data-currentposition")
+        current_position = str("{:.2f}".format(float(current_position)))
+        ccy_pair_card_gui[ccy_pair] = (max_balance, current_position)
+
+    logger.info(f'card info gui: {ccy_pair_card_gui}')
+
+    ccy_pair_card_db = dict()
+
+    for i in range(len(ccy_pair_info_db)):
+        ccy_pair = ccy_pair_info_db[i][1]
+        max_balance = str(ccy_pair_info_db[i][2])
+        current_position = str(ccy_pair_info_db[i][4])
+        ccy_pair_card_db[ccy_pair] = (max_balance, current_position)
+
+    logger.info(f'card info db: {ccy_pair_card_db}')
+
+    assert ccy_pair_card_db == ccy_pair_card_gui
+
+
+
+
 
 
 

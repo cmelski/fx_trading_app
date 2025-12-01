@@ -22,8 +22,8 @@ class DB_Common():
         column_names = [desc[0] for desc in cursor.description]
 
         new_trade = f"INSERT INTO trade_blotter({column_names[1]}," \
-                    f"{column_names[2]}, {column_names[3]}, {column_names[4]}, {column_names[5]}, {column_names[6]}, {column_names[7]}, {column_names[8]}, {column_names[9]}, {column_names[10]}, {column_names[11]}, {column_names[12]})" \
-                    f" VALUES('{trade_details[0]}','{trade_details[1]}', '{trade_details[2]}', '{trade_details[3]}', '{trade_details[4]}', '{trade_details[5]}', '{trade_details[6]}', '{trade_details[7]}', '{trade_details[8]}', '{trade_details[9]}', '{trade_details[10]}', '{trade_details[11]}');"
+                    f"{column_names[2]}, {column_names[3]}, {column_names[4]}, {column_names[5]}, {column_names[6]}, {column_names[7]}, {column_names[8]}, {column_names[9]}, {column_names[10]}, {column_names[11]}, {column_names[12]}, {column_names[13]})" \
+                    f" VALUES('{trade_details[0]}','{trade_details[1]}', '{trade_details[2]}', '{trade_details[3]}', '{trade_details[4]}', '{trade_details[5]}', '{trade_details[6]}', '{trade_details[7]}', '{trade_details[8]}', '{trade_details[9]}', '{trade_details[10]}', '{trade_details[11]}', '{trade_details[12]}');"
         cursor.execute(new_trade)
         self.connection.commit()
         cursor.close()
@@ -48,11 +48,23 @@ class DB_Common():
         self.connection.commit()
         cursor.close()
 
+    def update_spot_rate(self, time, ccy_pair, rate):
+        cursor = self.connection.cursor
+        cursor.execute(
+            f'Update spot_rate '
+            f'Set timestamp = %s, spot_rate = %s '
+            f'WHERE ccy_pair = %s;',
+            (time, rate, ccy_pair,)
+        )
+        self.connection.commit()
+        cursor.close()
+
     def retrieve_rates(self, ccy_pairs):
         rates = dict()
         cursor = self.connection.cursor
 
         for ccy_pair in ccy_pairs:
+
             cursor.execute(
                 f'SELECT * FROM spot_rate '
                 f'WHERE ccy_pair = %s;',
@@ -112,8 +124,6 @@ class DB_Common():
                 response_dict['status'] = 'ok'
                 return response_dict
 
-
-
     def update_position(self, ccy_pair, trade_amount, direction):
 
         cursor = self.connection.cursor
@@ -149,3 +159,29 @@ class DB_Common():
         response_dict['current_position'] = new_position
         response_dict['max_limit'] = ccy_pair_info[2]
         return response_dict
+
+    def clear_position(self, ccy_pair):
+        cursor = self.connection.cursor
+        cursor.execute(
+            f'Update ccy_pairs '
+            f'Set current_position = 0.00 '
+            f'WHERE ccy_pair = %s;',
+            (ccy_pair,)
+        )
+        self.connection.commit()
+        cursor.close()
+
+    def get_spot_rate(self, ccy_pair):
+
+        cursor = self.connection.cursor
+
+        cursor.execute(
+            f'SELECT * FROM spot_rate '
+            f'WHERE ccy_pair = %s;',
+            (ccy_pair,)
+        )
+        rate = cursor.fetchone()
+        print(rate)
+        cursor.close()
+
+        return rate[3]

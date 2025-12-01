@@ -47,7 +47,8 @@ def create_table():
                     ccy_pair_id SERIAL PRIMARY KEY,
                     ccy_pair VARCHAR(6) NOT NULL,
                     trade_limit NUMERIC(12, 2),
-                    convention VARCHAR(12)
+                    convention VARCHAR(12),
+                    current_position NUMERIC(12, 2)
                 );
             """)
 
@@ -67,7 +68,8 @@ def create_table():
                             rate VARCHAR(20),
                             dealt_rate VARCHAR(20),
                             markup VARCHAR(20),
-                            profit VARCHAR(50)
+                            profit VARCHAR(50),
+                            source VARCHAR(10)
                         );
                     """)
 
@@ -81,29 +83,6 @@ def create_table():
                                     spot_rate VARCHAR(20)
                                 );
                             """)
-            # cur.execute("""
-            #     CREATE TABLE IF NOT EXISTS list (
-            #         id SERIAL PRIMARY KEY,
-            #         user_id INTEGER,
-            #         name VARCHAR(100) NOT NULL,
-            #         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            #     );
-            # """)
-
-            # Items table
-            # cur.execute("""
-            #     CREATE TABLE IF NOT EXISTS items (
-            #         id SERIAL PRIMARY KEY,
-            #         list_id INTEGER,
-            #         task VARCHAR(100) NOT NULL,
-            #         due_date VARCHAR(20),
-            #         assignee VARCHAR(50),
-            #         notes VARCHAR(250),
-            #         completed BOOLEAN,
-            #         FOREIGN KEY (list_id) REFERENCES list(id) ON DELETE CASCADE
-            #     );
-
-            #""")
 
         print("✅ Tables created successfully!")
 
