@@ -69,9 +69,31 @@ def create_table():
                             dealt_rate VARCHAR(20),
                             markup VARCHAR(20),
                             profit VARCHAR(50),
-                            source VARCHAR(10)
+                            source VARCHAR(10),
+                            order_id VARCHAR(50)
                         );
                     """)
+
+        # Order table
+
+            cur.execute("""
+                             CREATE TABLE IF NOT EXISTS order_blotter (
+                                 order_id SERIAL PRIMARY KEY,
+                                 order_status VARCHAR(50) NOT NULL,
+                                 timestamp VARCHAR(50) NOT NULL,
+                                 order_type VARCHAR(20) NOT NULL,
+                                 ccy_pair VARCHAR(6) NOT NULL,
+                                 direction VARCHAR(4) NOT NULL,
+                                 base_ccy VARCHAR(3) NOT NULL,
+                                 order_amount VARCHAR(50) NOT NULL,
+                                 counter_ccy VARCHAR(3) NOT NULL,
+                                 rate VARCHAR(20),
+                                 level VARCHAR(20),
+                                 source VARCHAR(10),
+                                 outstanding_balance VARCHAR(50),
+                                 reference VARCHAR(50)
+                             );
+                         """)
 
         # rate table
 
@@ -80,7 +102,8 @@ def create_table():
                                     rate_id SERIAL PRIMARY KEY,
                                     timestamp VARCHAR(50) NOT NULL,
                                     ccy_pair VARCHAR(6) NOT NULL,
-                                    spot_rate VARCHAR(20)
+                                    spot_rate VARCHAR(20),
+                                    source VARCHAR(10)
                                 );
                             """)
 

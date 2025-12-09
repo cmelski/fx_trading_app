@@ -1,217 +1,927 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FX Spot Trading Dashboard</title>
-  <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; margin:0; padding:0; }
-    header { background-color:#2b3e50; color:white; padding:1rem; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.2); }
-    h1 { margin:0; font-size:1.8rem; letter-spacing:1px; }
-    main { padding:2rem; display:flex; flex-direction:column; gap:2rem; }
-    .pairs-container { display:flex; flex-wrap:wrap; gap:2rem; justify-content:center; }
-    .pair-card { background-color:white; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); padding:1rem 2rem; width:250px; text-align:center; transition: transform 0.2s, box-shadow 0.2s; }
-    .pair-card:hover { transform:translateY(-5px); box-shadow:0 8px 20px rgba(0,0,0,0.15); }
-    .pair-card h2 { margin:0; font-size:1.2rem; color:#2b3e50; }
-    .rate { font-size:2rem; color:#27ae60; margin:0.5rem 0; }
-    .trade-form { margin-top:1rem; }
-    .trade-form input, .trade-form select, .trade-form button { width:100%; padding:0.5rem; margin:0.3rem 0; border-radius:5px; border:1px solid #ccc; font-size:1rem; }
-    .trade-form button { background-color:#27ae60; color:white; border:none; cursor:pointer; transition: background-color 0.2s; }
-    .trade-form button:hover { background-color:#219150; }
-    .blotter { background-color:white; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); padding:1rem 2rem; overflow-x:auto; }
-    .blotter table { width:100%; border-collapse:collapse; }
-    .blotter th, .blotter td { padding:0.5rem 1rem; text-align:center; border-bottom:1px solid #ddd; }
-    .blotter th { background-color:#2b3e50; color:white; }
-    footer { text-align:center; padding:1rem; background-color:#2b3e50; color:white; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FX Spot Trading Dashboard</title>
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f6f8;
+    margin: 0; padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
 
-    /* Deal Ticket */
-    .deal-ticket { position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; border-radius:10px; padding:1rem 2rem; box-shadow:0 8px 20px rgba(0,0,0,0.3); display:none; z-index:1000; width:300px; }
-    .deal-ticket h3 { margin-top:0; text-align:center; color:#2b3e50; }
-    .deal-ticket button { display:block; margin:1rem auto 0 auto; padding:0.5rem 1rem; background-color:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer; }
-  </style>
+header {
+    background-color: #2b3e50;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+h1 { margin:0; font-size:1.8rem; letter-spacing:1px; }
+
+main { flex:1; display:flex; flex-direction:column; padding:0; }
+
+.top-section {
+    flex: 2;
+    display:flex;
+    padding:1rem 2rem;
+    gap:1.5rem;
+}
+
+.left-panels {
+    flex: 2;
+    display:flex;
+    flex-wrap:wrap;
+    gap:1.5rem;
+    align-content:flex-start;
+}
+
+.right-stats {
+    flex: 1;
+    background:white;
+    border-radius:10px;
+    padding:1rem 2rem;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    height: fit-content;
+}
+
+.right-stats h2 { margin-top:0; color:#2b3e50; text-align:center; }
+
+.pair-card {
+    background-color:white;
+    border-radius:8px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.08);
+    padding:1rem 1rem 0.6rem 1rem;
+    width:180px;
+    text-align:center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+.pair-card:hover {
+    transform:translateY(-5px);
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
+}
+
+.pair-card h2 { margin:0; font-size:1rem; color:#2b3e50; }
+.rate { font-size:1.4rem; margin:0.3rem 0; }
+.max-limit { position:absolute; top:5px; right:8px; font-size:0.7rem; color:#999; }
+
+/* --- Rate Panel Modern Layout --- */
+
+.pair-label {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.rate-center {
+    text-align: center;
+    margin: 10px 0 16px 0;
+}
+
+.dealt-rate {
+    font-size: 34px;
+    font-weight: 700;
+    color: #000;
+    line-height: 1.1;
+}
+
+.spot-rate {
+    font-size: 16px;
+    color: #666;
+    margin-top: 4px;
+}
+
+
+.trade-form input,
+.trade-form select,
+.trade-form button {
+    width:100%;
+    padding:0.35rem;
+    margin:0.25rem 0;
+    border-radius:4px;
+    font-size:0.85rem;
+}
+
+.trade-form button {
+    background-color:#27ae60;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+
+.trade-form button:hover { background-color:#219150; }
+
+.bottom-section { flex:1; padding:1rem 2rem; }
+
+.blotter {
+    background:white;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    padding:1rem 2rem;
+    overflow-x:auto;
+    height:100%;
+}
+
+.blotter table { width:100%; border-collapse:collapse; }
+
+.blotter th, .blotter td {
+    padding:0.5rem 1rem;
+    text-align:center;
+    border-bottom:1px solid #ddd;
+}
+
+.blotter th { background-color:#2b3e50; color:white; }
+
+footer {
+    text-align:center;
+    padding:1rem;
+    background-color:#2b3e50;
+    color:white;
+}
+
+.deal-ticket {
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    background:white;
+    border-radius:10px;
+    padding:1rem 2rem;
+    box-shadow:0 8px 20px rgba(0,0,0,0.3);
+    display:none;
+    z-index:1000;
+    width:300px;
+}
+
+.deal-ticket h3 { margin-top:0; text-align:center; color:#2b3e50; }
+
+.flash-green {
+    background-color: #28a745 !important;
+    transition: background-color 1s ease-out;
+}
+
+.position-container {
+    width: 100%;
+    height: 10px;
+    border: 1px solid #999;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #f5f5f5;
+}
+
+.position-bar {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.pos-left, .pos-right { width: 50%; height: 100%; position: relative; }
+.fill-left, .fill-right {
+    height: 100%;
+    width: 0%;
+    position: absolute;
+    top:0;
+    transition: width 0.3s;
+}
+.fill-left { left:auto; right:0; background:red; }
+.fill-right { left:0; background:green; }
+
+/* Tooltip */
+.tooltip { position: relative; display:block; width:100%; }
+.tooltip .tooltiptext {
+    visibility:hidden;
+    width:100px;
+    background:black;
+    color:#fff;
+    text-align:center;
+    padding:0px 0;
+    border-radius:6px;
+    font-size:16px;
+    position:absolute; z-index:1;
+}
+.tooltip:hover .tooltiptext { visibility: visible; }
+
+    .rate-up {
+    color: #0a9b00 !important;     /* green */
+    transition: color 0.6s ease;
+}
+
+.rate-down {
+    color: #d20000 !important;     /* red */
+    transition: color 0.6s ease;
+}
+    .order-entry {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 1rem 2rem;
+    width: 280px;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    display: none;
+    z-index: 2000;
+}
+.order-entry h3 {
+    text-align: center;
+    margin-top: 0;
+    color: #2b3e50;
+}
+.order-entry input {
+    width: 100%;
+    padding: 0.3rem;
+    margin: 0.35rem 0;
+    font-size: 0.9rem;
+}
+.order-entry button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.blotter-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.blotter-tab {
+    padding: 8px 16px;
+    background: #e3e9f2;
+    border: 1px solid #b8c4d6;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.blotter-tab.active {
+    background: #2b3e50;
+    color: white;
+}
+
+.blotter-tab-content {
+    display: none;
+}
+
+.blotter-tab-content.active {
+    display: block;
+}
+
+
+</style>
 </head>
 <body>
 
 <header><h1>FX Spot Trading Dashboard</h1></header>
 
 <main>
-  <div class="pairs-container">
-    {% set counter = namespace(value=0) %}
-    {% for (k,v) in ccy_pair_info.items(): %}
-       {% set n = counter|string %}
+<div class="top-section">
 
-    <form class="trade-form" name="trade_form_{{n}}" method="POST" action="{{ url_for('execute_trade')}}">
-    <div class="pair-card" data-pair="{{k}}" data-rate="{{v}}">
-       <input type="hidden" name="pair" value="{{k}}">
-        <input type="hidden" name="rate" value="{{v}}">
-      <h2>{{k}}</h2>
-      <div class="rate">{{v}}</div>
+<div class="left-panels">
+{% set counter = namespace(value=0) %}
+{% for (k,v) in ccy_pair_info.items() %}
+{% set n = counter|string %}
+<form method="POST" action="{{ url_for('execute_trade')}}" class="trade-form" name="trade_form_{{n}}">
+<div class="pair-card" data-pair="{{k}}" data-rate="{{v[0]}}" data-maxBalance="{{v[1]}}" data-currentPosition="{{v[2]}}">
+<input id="{{k}}-hidden-spot-rate" type="hidden" name="spot_rate">
+    <div class="max-limit">Max: {{ v[1] | format_million }}</div>
+    <input type="hidden" name="pair" value="{{k}}">
+    <input id="{{k}}-hidden-rate" type="hidden" name="rate" value="{{v[0]}}">
+   <h2 class="pair-label">{{k}}</h2>
 
-        <select name="direction">
-          <option value="Buy">Buy {{k[:3]}}</option>
-          <option value="Sell">Sell {{k[:3]}}</option>
-        </select>
-        <input class="base-amount" name="base_amount" type="text" placeholder="Amount ({{k[:3]}})" min="0">
-        <input class="counter-amount" name= "counter_amount" type="text" placeholder="Amount ({{k[3:]}})" min="0" readonly>
-        <button type="button">Execute Trade</button>
+<div class="rate-center">
+    <div class="dealt-rate" id="{{k}}-dealt-rate">{{v[0]}}</div>
 
+    <div class="spot-rate" id="{{k}}-rate">{{v[0]}}</div>
+</div>
+
+    <div class="tooltip">
+        <div class="position-container" data-pair="{{k}}">
+            <div class="position-bar">
+                <div class="pos-left"><div class="fill-left"></div></div>
+                <div class="pos-right"><div class="fill-right"></div></div>
+            </div>
+        </div>
+        <span id="{{k}}-pb-tooltip" class="tooltiptext">{{v[2] | string | format_number}}</span>
     </div>
-        </form>
-    {% set counter.value = counter.value + 1 %}
-    {% endfor %}
-  </div>
+    <button type="button" class="open-order-ticket">Order</button>
 
-  <div class="blotter">
-    <h2>Trade Blotter</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Date & Time</th>
-          <th>Pair</th>
-          <th>Direction</th>
-          <th>Base Ccy</th>
-          <th>Base Amount</th>
-          <th>Counter Ccy</th>
-          <th>Counter Amount</th>
-          <th>Rate</th>
-        </tr>
-      </thead>
-      <tbody id="blotter-body"></tbody>
-    </table>
-  </div>
+    <select name="direction">
+        <option value="Buy">Buy {{k[:3]}}</option>
+        <option value="Sell">Sell {{k[:3]}}</option>
+    </select>
 
-  <!-- Deal Ticket -->
-  <div class="deal-ticket" id="deal-ticket">
-    <h3>Trade Details</h3>
-    <div id="deal-content"></div>
-    <button id="close-ticket">Close</button>
-  </div>
+    <input class="base-amount" name="base_amount" type="text" placeholder="Amount ({{k[:3]}})" min="0">
+    <input class="counter-amount" name="counter_amount" type="text" placeholder="Amount ({{k[3:]}})" min="0" readonly>
+
+    <label for="markup">Markup (pips): <span class="markup-value-pips" id="markup-value">0</span></label>
+    <input type="range" class="markup-pips" id="markup" name="pip-markup" min="0" max="1000" step="1" value="0">
+
+    <button class="submit-trade" type="submit">Deal</button>
+</div>
+</form>
+{% set counter.value = counter.value + 1 %}
+{% endfor %}
+</div>
+
+<div class="right-stats">
+<h2>Trading Statistics</h2>
+<p>Total Trades: <span id="total-trades">{{ trades|length }}</span></p>
+<p>Last Trade: <span id="last-trade">{% if trades %}{{ trades[-1][3] }}{% else %}None{% endif %}</span></p>
+<p>Most Frequent Ccy Pair: <span id="most-frequent-pair">-</span></p>
+<p>Largest Trade: <span id="largest-trade">-</span></p>
+    <p>Trade Source: <span id="trade-source">-</span></p>
+    <p>Total Orders: <span id="total-orders">{{ orders|length }}</span></p>
+</div>
+
+</div>
+
+<div class="bottom-section">
+<section id="blotter">
+
+    <!-- TAB HEADERS -->
+    <div class="blotter-tabs">
+        <button class="blotter-tab active" id="sp-blotter" data-target="spot-blotter">Spot Trades ({{trades|length}})</button>
+        <button class="blotter-tab" data-target="order-blotter">Orders ({{orders|length}})</button>
+    </div>
+
+    <!-- TAB CONTENT: SPOT TRADES -->
+    <div id="spot-blotter" class="blotter-tab-content active">
+        <table>
+            <thead>
+                <tr>
+                    <th>Trade ID</th><th>Status</th><th>Timestamp</th><th>Pair</th>
+<th>Direction</th><th>Base Ccy</th><th>Base Amount</th><th>Counter Ccy</th>
+<th>Counter Amount</th><th>Spot Rate</th><th>Dealt Rate</th><th>Markup (pips)</th><th>Profit</th><th>Source</th>
+                    <th>Order ID</th>
+                </tr>
+            </thead>
+            <tbody id="blotter-body">
+                {% for i in range(0,trades|length) %}
+<tr>
+<td>{{trades[i][0]}}</td><td>{{trades[i][1]}}</td><td>{{trades[i][2]}}</td>
+<td>{{trades[i][3]}}</td><td>{{trades[i][4]}}</td><td>{{trades[i][5]}}</td>
+<td>{{trades[i][6] | format_number}}</td><td>{{trades[i][7]}}</td>
+<td>{{trades[i][8] | format_number}}</td><td>{{trades[i][9]}}</td>
+<td>{{trades[i][10]}}</td><td>{{trades[i][11]}}</td>
+<td>{{trades[i][12] | format_number}}</td>
+    <td class="trade-source">{{trades[i][13]}}</td>
+    <td>{{trades[i][14]}}</td>
+</tr>
+{% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- TAB CONTENT: ORDERS -->
+    <div id="order-blotter" class="blotter-tab-content">
+        <table id="order-blotter-table">
+            <thead>
+                <tr>
+                     <th>Order ID</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                    <th>Order Type</th>
+                    <th>Ccy Pair</th>
+                    <th>Direction</th>
+                    <th>Base Ccy</th>
+                    <th>Amount</th>
+                     <th>Outstanding Balance</th>
+                    <th>Counter Ccy</th>
+                    <th>Rate</th>
+                    <th>Level</th>
+                    <th>Reference</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody id="order-blotter-body">
+
+                 {% for i in range(0,orders|length) %}
+            <tr>
+<td>{{orders[i][0]}}</td><td>{{orders[i][1]}}</td><td>{{orders[i][2]}}</td>
+<td>{{orders[i][3]}}</td><td>{{orders[i][4]}}</td><td>{{orders[i][5]}}</td>
+<td>{{orders[i][6]}}</td><td>{{orders[i][7] | format_number}}</td>
+                <td>{{orders[i][12] | format_number}}</td>
+<td>{{orders[i][8]}}</td><td>{{orders[i][9]}}</td>
+<td>{{orders[i][10]}}</td><td>{{orders[i][13]}}</td><td>{{orders[i][11]}}</td>
+
+</tr>
+{% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</section>
+
+</div>
+
+<div class="deal-ticket" id="deal-ticket">
+<h3>Trade Details</h3>
+<div id="deal-content"></div>
+<button id="close-ticket">Close</button>
+</div>
+
+
+    <div class="order-entry" id="order-entry">
+         <form method="POST" id="order-entry-form" action="{{ url_for('execute_order')}}" class="order-form" name="order_form">
+    <h3>New Order</h3>
+
+    <div><strong>Pair:</strong> <input type="text" id="oe-pair" name="oe-pair" readonly></div>
+    <div><strong>Rate:</strong> <input type="text" id="oe-rate" name="oe-rate" readonly></div>
+
+    <label>Direction</label>
+    <input type="text" id="oe-direction" name="oe-direction" readonly>
+
+    <label>Level</label>
+    <input type="number" id="oe-level" step="0.0001" name="oe-level">
+
+    <label>Amount</label>
+    <input type="number" id="oe-amount" min="0" name="oe-amount">
+
+                <label>Reference</label>
+    <input type="text" id="oe-reference" name="oe-reference">
+
+    <button id="oe-submit" type="submit">Submit Order</button>
+              </form>
+    <button id="oe-close">Close</button>
+</div>
+
+
 
 </main>
-
 <footer>FX Spot Trading &copy; 2025</footer>
 
 <script>
-function formatWithCommas(num, decimals = 2) {
-    if (!num && num !== 0) return "";
-    return Number(num).toLocaleString(undefined, {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-    });
-}
 
-function unformatNumber(str) {
-    return str.replace(/,/g, "");
-}
 
-document.querySelectorAll('.pair-card').forEach(card => {
-    const rate = parseFloat(card.dataset.rate);
-    const baseInput = card.querySelector('.base-amount');
-    const counterInput = card.querySelector('.counter-amount');
+document.addEventListener("DOMContentLoaded", () => {
+    const previousRates = {};  // store last spot rate per pair
 
-    // Update counter amount dynamically
-    baseInput.addEventListener('input', () => {
-        let raw = baseInput.value;
-        let cursorPos = baseInput.selectionStart;
+    function updateSpotRate(pair, newRate) {
+        const spotRateEl = document.getElementById(`${pair}-rate`);
+        if (!spotRateEl) return;
 
-        // Count digits before cursor
-        let digitsBeforeCursor = raw.slice(0, cursorPos).replace(/[^0-9.]/g,'').length;
+        const prevRate = previousRates[pair];
+        const numericNew = parseFloat(newRate);
 
-        let numeric = parseFloat(unformatNumber(raw));
-        if (isNaN(numeric)) {
-            counterInput.value = "";
+        // First tick — just set baseline
+        if (prevRate === undefined) {
+            previousRates[pair] = numericNew;
+            spotRateEl.textContent = newRate;
             return;
         }
 
-        // Counter amount always 2 decimals
-        counterInput.value = formatWithCommas(numeric * rate, 2);
-
-        // Base amount max 2 decimals
-        baseInput.value = formatWithCommas(numeric, 2);
-
-        // Restore cursor
-        let formatted = baseInput.value;
-        let newPos = 0, digitsSeen = 0;
-        while (newPos < formatted.length && digitsSeen < digitsBeforeCursor) {
-            if (/\d/.test(formatted[newPos])) digitsSeen++;
-            newPos++;
-        }
-        baseInput.setSelectionRange(newPos, newPos);
-    });
-});
-
-// Handle trade execution
-const tradeButtons = document.querySelectorAll('.trade-form button');
-const blotterBody = document.getElementById('blotter-body');
-
-tradeButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        const form = button.closest('.trade-form');
-        const card = button.closest('.pair-card');
-
-        const pair = card.dataset.pair;
-        const rate = parseFloat(card.dataset.rate);
-        const direction = form.querySelector('select').value;
-
-        const baseValueRaw = parseFloat(unformatNumber(form.querySelector('.base-amount').value));
-        const baseCcy = pair.slice(0,3);
-        const counterValueRaw = parseFloat(unformatNumber(form.querySelector('.counter-amount').value));
-        const counterCcy = pair.slice(-3);
-
-        if (isNaN(baseValueRaw) || baseValueRaw <= 0) {
-            return alert("Enter a valid trade amount!");
+        // Compare and apply color change
+        if (numericNew > prevRate) {
+            spotRateEl.classList.add("rate-up");
+            spotRateEl.classList.remove("rate-down");
+        } else if (numericNew < prevRate) {
+            spotRateEl.classList.add("rate-down");
+            spotRateEl.classList.remove("rate-up");
         }
 
-        const now = new Date();
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${now.toLocaleDateString()} ${now.toLocaleTimeString()}</td>
-            <td>${pair}</td>
-            <td>${direction}</td>
-            <td>${baseCcy}</td>
-            <td>${formatWithCommas(baseValueRaw, 2)}</td>
-            <td>${counterCcy}</td>
-            <td>${formatWithCommas(counterValueRaw, 2)}</td>
-            <td>${rate}</td>
-        `;
+        // Update text
+        spotRateEl.textContent = newRate;
 
-        // Double-click to show deal ticket
-        row.addEventListener('dblclick', () => showDealTicket({
-            datetime: `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`,
-            pair, direction,
-            base: `${formatWithCommas(baseValueRaw, 2)} (${baseCcy})`,
-            counter: `${formatWithCommas(counterValueRaw, 2)} (${counterCcy})`,
-            rate
-        }));
+        // Fade back to normal after 600ms
+        setTimeout(() => {
+            spotRateEl.classList.remove("rate-up");
+            spotRateEl.classList.remove("rate-down");
+        }, 2000);
 
-        blotterBody.prepend(row);
+        // Save new rate
+        previousRates[pair] = numericNew;
+    }
 
-        // Reset fields
-        form.querySelector('.base-amount').value = "";
-        form.querySelector('.counter-amount').value = "";
-    });
+    // Expose globally so your ticker update code can call it
+    window.updateSpotRate = updateSpotRate;
+
 });
-
-// Deal ticket handling
-const dealTicket = document.getElementById('deal-ticket');
-const dealContent = document.getElementById('deal-content');
-const closeTicketBtn = document.getElementById('close-ticket');
-
-function showDealTicket(trade) {
-    dealContent.innerHTML = `
-        <p><strong>Date & Time:</strong> ${trade.datetime}</p>
-        <p><strong>Pair:</strong> ${trade.pair}</p>
-        <p><strong>Direction:</strong> ${trade.direction}</p>
-        <p><strong>Base Amount:</strong> ${trade.base}</p>
-        <p><strong>Counter Amount:</strong> ${trade.counter}</p>
-        <p><strong>Rate:</strong> ${trade.rate}</p>
-    `;
-    dealTicket.style.display = 'block';
+</script>
+<script>
+// ---------------- Helper Functions ----------------
+function formatWithCommas(num, decimals = 2) {
+    if (num===undefined || num===null || num==="") return "";
+    return Number(num).toLocaleString(undefined,{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
 }
 
-closeTicketBtn.addEventListener('click', () => { dealTicket.style.display = 'none'; });
-window.addEventListener('click', e => { if (e.target === dealTicket) dealTicket.style.display = 'none'; });
+function unformatNumber(str) { return str.replace(/,/g,''); }
+
+function updateCounterAmount(card, dealtRate) {
+    const baseInput = card.querySelector(".base-amount");
+    const counterInput = card.querySelector(".counter-amount");
+    if (!baseInput || !counterInput) return;
+
+    const raw = baseInput.value.replace(/,/g,"");
+    const numeric = parseFloat(raw);
+    if (isNaN(numeric)) { counterInput.value=""; return; }
+
+    const counter = (numeric * dealtRate).toFixed(2);
+    counterInput.value = formatWithCommas(counter,2);
+}
+
+function updateOrderStatus(orderDetails) {
+  const table = document.getElementById("order-blotter-table");
+
+    // Extract values
+  const orderId   = String(orderDetails[0]);
+  const newStatus = orderDetails[1]
+  const outstandingBal = orderDetails[2]
+
+  // --- Get column indexes from header ---
+  const headers = [...table.querySelectorAll("thead th")];
+  const orderIdCol = headers.findIndex(h => h.textContent.trim() === "Order ID");
+  const statusCol  = headers.findIndex(h => h.textContent.trim() === "Status");
+  const outstandingBalCol  = headers.findIndex(h => h.textContent.trim() === "Outstanding Balance");
+
+  if (orderIdCol === -1 || statusCol === -1) return;
+
+  // --- Loop through the rows to find the matching Order ID ---
+  const rows = table.querySelectorAll("tbody tr");
+
+  for (const row of rows) {
+    const currentOrderId = row.cells[orderIdCol].textContent.trim();
+    if (currentOrderId === orderId) {
+      // Found the row → update status cell
+      row.cells[statusCol].textContent = newStatus;
+      row.cells[outstandingBalCol].textContent = outstandingBal;
+      break;
+    }
+  }
+}
+
+
+function addTradeToBlotter(trade) {
+    const tbody = document.getElementById('blotter-body');
+    const row = document.createElement('tr');
+
+    row.innerHTML = `
+        <td>${trade[0]}</td>
+        <td>${trade[1]}</td>
+        <td>${trade[2]}</td>
+        <td>${trade[3]}</td>
+        <td>${trade[4]}</td>
+        <td>${trade[5]}</td>
+        <td>${trade[6]}</td>
+        <td>${trade[7]}</td>
+        <td>${trade[8]}</td>
+        <td>${trade[9]}</td>
+        <td>${trade[10]}</td>
+        <td>${trade[11]}</td>
+        <td>${trade[12]}</td>
+           <td class="trade-source">${trade[13]}</td>
+           <td>${trade[14]}</td>
+    `;
+
+    // Add the new row at the top
+    tbody.prepend(row);
+
+    const tradeCount = document.getElementById('sp-blotter').textContent;
+    const numStr = tradeCount.match(/\((\d+)\)/)[1];  // "2"
+    const newNumber = parseInt(numStr, 10) + 1;  // 3
+    document.getElementById("sp-blotter").textContent = `Spot Trades (${newNumber})`;
+
+    const ccyPair = trade[3];
+    const tradeLimit = parseFloat(trade[16])||0;
+    const currentPosition = parseFloat(trade[15])||0;
+
+    updatePositionBar(ccyPair, currentPosition, tradeLimit);
+    document.getElementById(`${trade[3]}-pb-tooltip`).innerText = formatWithCommas(currentPosition,2);
+    attachDealTicket();
+
+
+
+    // Optionally, highlight the new row briefly
+    row.classList.add('flash-green');
+    setTimeout(() => row.classList.remove('flash-green'), 2000);
+}
+
+
+function updateDealtRate(card) {
+    const directionSel = card.querySelector('select[name="direction"]');
+    const slider = card.querySelector(".markup-pips");
+    if (!directionSel || !slider) return;
+
+    const direction = directionSel.value;
+    const pips = parseFloat(slider.value);
+    const spot = parseFloat(card.dataset.rate);
+    const markUp = pips * 0.0001;
+
+    let dealt = direction.startsWith("Buy") ? spot+markUp : spot-markUp;
+    dealt = dealt.toFixed(4);
+
+    document.getElementById(`${card.dataset.pair}-dealt-rate`).innerText = dealt;
+    document.getElementById(`${card.dataset.pair}-hidden-rate`).value = dealt;
+    document.getElementById(`${card.dataset.pair}-hidden-spot-rate`).value = spot;
+
+    updateCounterAmount(card, dealt);
+}
+
+function updatePositionBar(pair, position, maxLimit) {
+    const container = document.querySelector(`.position-container[data-pair="${pair}"]`);
+    if (!container) return;
+    const fillLeft = container.querySelector(".fill-left");
+    const fillRight = container.querySelector(".fill-right");
+    const ratio = Math.min(Math.abs(position)/maxLimit,1)*100;
+
+    if(position>0){ fillRight.style.width=`${ratio}%`; fillLeft.style.width=`0%`; }
+    else if(position<0){ fillLeft.style.width=`${ratio}%`; fillRight.style.width=`0%`; }
+    else{ fillLeft.style.width=`0%`; fillRight.style.width=`0%`; }
+}
+
+// ---------------- Initialize Pair Cards ----------------
+document.querySelectorAll('.pair-card').forEach(card=>{
+    const baseInput = card.querySelector('.base-amount');
+    const counterInput = card.querySelector('.counter-amount');
+    const slider = card.querySelector(".markup-pips");
+    const output = card.querySelector(".markup-value-pips");
+    const form = card.closest('form');
+    const tradeLimit = parseFloat(card.dataset.maxbalance)||0;
+    let currentPosition = parseFloat(card.dataset.currentposition)||0;
+
+    updatePositionBar(card.dataset.pair, currentPosition, tradeLimit);
+
+    if(slider && output){
+        output.textContent = slider.value;
+        slider.addEventListener("input",()=>{ output.textContent=slider.value; updateDealtRate(card); });
+    }
+
+    baseInput.addEventListener('input',()=>{
+        const raw=baseInput.value;
+        const cursorPos=baseInput.selectionStart;
+        const digitsBefore = raw.slice(0,cursorPos).replace(/[^0-9]/g,"").length;
+        let numeric = parseFloat(unformatNumber(raw));
+        if(isNaN(numeric)){ counterInput.value=""; return; }
+        numeric=Number(numeric.toFixed(2));
+        const dealtRate = parseFloat(document.getElementById(`${card.dataset.pair}-dealt-rate`).innerText);
+        const formattedBase = formatWithCommas(numeric,2);
+        const formattedCounter = formatWithCommas(numeric*dealtRate,2);
+        baseInput.value=formattedBase;
+        counterInput.value=formattedCounter;
+
+        // restore cursor
+        let pos=0,count=0;
+        while(pos<formattedBase.length && count<digitsBefore){
+            if(/\d/.test(formattedBase[pos])) count++; pos++;
+        }
+        baseInput.setSelectionRange(pos,pos);
+    });
+
+    baseInput.addEventListener("keydown",evt=>{ if(evt.key==="Enter") evt.preventDefault(); });
+
+    const dirSel = card.querySelector('select[name="direction"]');
+    dirSel.addEventListener("change",()=>{ updateDealtRate(card); });
+
+    form.addEventListener("submit",(e)=>{
+        e.preventDefault();
+        const raw=(baseInput.value||"").trim();
+        if(!raw){ alert("Enter a base amount before continuing."); return; }
+        const amount=parseFloat(unformatNumber(raw));
+        if(isNaN(amount)||amount<=0){ alert("Amount must be positive."); return; }
+        const direction = dirSel.value;
+        const signedAmount = direction.toLowerCase().startsWith("b")?amount:-amount;
+        const newPosition = currentPosition + signedAmount;
+        if(Math.abs(newPosition)>tradeLimit){ alert("Trade amount breaches limit."); return; }
+        currentPosition=newPosition;
+        card.dataset.currentposition=newPosition;
+        updatePositionBar(card.dataset.pair,currentPosition,tradeLimit);
+
+        form.submit();
+
+    });
+});
+
+
+// ---------------- Deal Ticket ----------------
+const dealTicket = document.getElementById('deal-ticket');
+const dealContent = document.getElementById('deal-content');
+document.getElementById('close-ticket').addEventListener('click',()=>dealTicket.style.display='none');
+window.addEventListener('click', e=>{ if(e.target===dealTicket) dealTicket.style.display='none'; });
+
+function showDealTicket(trade){
+    dealContent.innerHTML=`
+    <p><strong>Trade ID:</strong> ${trade.id}</p>
+    <p><strong>Status:</strong> ${trade.status}</p>
+    <p><strong>Date & Time:</strong> ${trade.datetime}</p>
+    <p><strong>Pair:</strong> ${trade.pair}</p>
+    <p><strong>Direction:</strong> ${trade.direction}</p>
+    <p><strong>Base Amount:</strong> ${trade.base}</p>
+    <p><strong>Counter Amount:</strong> ${trade.counter}</p>
+    <p><strong>Spot Rate:</strong> ${trade.rate}</p>
+    <p><strong>Dealt Rate:</strong> ${trade.dealt_rate}</p>
+    `;
+    dealTicket.style.display='block';
+}
+
+function attachDealTicket(){
+    document.querySelectorAll('#blotter-body tr').forEach(row=>{
+        row.addEventListener('dblclick',()=>{
+            const cells=row.children;
+            showDealTicket({
+                id: cells[0].innerText,
+                status: cells[1].innerText,
+                datetime: cells[2].innerText,
+                pair: cells[3].innerText,
+                direction: cells[4].innerText,
+                base:`${cells[6].innerText} (${cells[5].innerText})`,
+                counter:`${cells[8].innerText} (${cells[7].innerText})`,
+                rate: cells[9].innerText,
+                dealt_rate: cells[10].innerText
+            });
+        });
+    });
+}
+
+// ---------------- Trading Stats ----------------
+function updateTradingStatsAndHighlight(){
+    const tableRows = document.querySelectorAll("#blotter-body tr");
+    document.getElementById("total-trades").innerText = tableRows.length;
+    if(tableRows.length===0){
+        document.getElementById("last-trade").innerText="-";
+        document.getElementById("most-frequent-pair").innerText="-";
+        document.getElementById("largest-trade").innerText="-";
+        document.getElementById("trade-source").innerText="-";
+        return;
+    }
+    const newestRow = tableRows[0];
+    const lastTrade = newestRow.querySelector("td:nth-child(4)").innerText.trim();
+    document.getElementById("last-trade").innerText = lastTrade;
+
+    const pairValues = Array.from(tableRows).map(row=>row.querySelector("td:nth-child(4)").innerText.trim());
+    const counts={}; pairValues.forEach(p=>counts[p]=(counts[p]||0)+1);
+    const maxCount = Math.max(...Object.values(counts));
+    const topPairs = Object.keys(counts).filter(pair=>counts[pair]===maxCount);
+    document.getElementById("most-frequent-pair").innerText = topPairs.map(p=>`${p} (${maxCount})`).join(", ");
+
+    const amountValues = Array.from(tableRows).map(row=>parseFloat(row.querySelector("td:nth-child(7)").innerText.replace(/,/g,'')));
+    const maxAmount = Math.max(...amountValues);
+    document.getElementById("largest-trade").innerText = `$${formatWithCommas(maxAmount,2)}`;
+
+    const sourceValues = Array.from(document.querySelectorAll("#blotter-body td.trade-source"))
+    .map(td => td.innerText.trim())
+    .filter(s => s !== "");  // remove empty or whitespace-only
+    console.log("Trade source:", sourceValues);
+
+    const sourceCounts={}; sourceValues.forEach(s=>sourceCounts[s]=(sourceCounts[s]||0)+1);
+    console.log("Source counts:", sourceCounts);
+    const tradeSource = sourceCounts;
+    function formatObjectStringAlphabetical(obj) {
+        return Object.keys(obj)
+            .sort()  // alphabetical sort
+            .map(key => `${key} (${obj[key]})`)
+            .join(", ");
+    }
+
+    const tradeSourceOutput = formatObjectStringAlphabetical(tradeSource);
+    document.getElementById("trade-source").innerText = tradeSourceOutput;
+
+
+    newestRow.classList.add("flash-green");
+    setTimeout(()=>newestRow.classList.remove("flash-green"),5000);
+}
+
+// ---------------- Update Spot Rates ----------------
+async function updateRates(){
+    try{
+        const response = await fetch("/api/fetch_rates");
+        const rates = await response.json();
+
+        document.querySelectorAll(".pair-card").forEach(card=>{
+            const pair = card.dataset.pair;
+            const newSpot = parseFloat(rates.rates[pair]);
+            card.dataset.rate = newSpot;
+            //document.getElementById(`${pair}-rate`).innerText = newSpot;
+              updateSpotRate(pair, newSpot);
+
+
+            updateDealtRate(card); // recalc dealt & counter
+        });
+    } catch(err){ console.error("Failed to fetch rates:", err); }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    attachDealTicket();
+    setTimeout(updateTradingStatsAndHighlight, 1); // defer to after render
+    setInterval(updateRates, 10000);
+});
+
+    // -------- ORDER ENTRY WINDOW --------
+const oe = document.getElementById("order-entry");
+const oePair = document.getElementById("oe-pair");
+const oeRate = document.getElementById("oe-rate");
+const oeDir = document.getElementById("oe-direction");
+const oeLevel = document.getElementById("oe-level");
+const oeAmount = document.getElementById("oe-amount");
+const orderForm = document.getElementById("order-entry-form");
+
+document.querySelectorAll(".open-order-ticket").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+        const card = e.target.closest(".pair-card");
+
+
+        const pair = card.dataset.pair;
+        const direction = card.querySelector("select[name='direction']").value;
+        const rate = document.getElementById(`${pair}-rate`).innerText;
+
+        oePair.value = pair;
+        oeRate.value = rate;
+        oeDir.value = direction;
+
+        oeLevel.value = "";
+        oeAmount.value = "";
+
+        oe.style.display = "block";
+
+});
+
+
+});
+
+orderForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const raw = (oeAmount.value || "").trim();
+    const level = (oeLevel.value || "").trim();
+
+    if (!raw) {
+        alert("Enter an order amount before continuing.");
+        return;
+    }
+
+    const amount = parseFloat(unformatNumber(raw));
+    if (isNaN(amount) || amount <= 0) {
+        alert("Order amount must be positive.");
+        return;
+    }
+
+     if (!level) {
+        alert("Enter an order level before continuing.");
+        return;
+    }
+
+    // If valid — submit safely:
+    orderForm.submit();
+});
+
+
+document.getElementById("oe-close").addEventListener("click", () => {
+    oe.style.display = "none";
+});
+
+    // ---------- TAB SWITCHING ----------
+document.querySelectorAll(".blotter-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+
+        // Remove active from all tabs
+        document.querySelectorAll(".blotter-tab").forEach(t =>
+            t.classList.remove("active")
+        );
+        // Add active to clicked tab
+        tab.classList.add("active");
+
+        const targetId = tab.dataset.target;
+
+        // Hide all tab content
+        document.querySelectorAll(".blotter-tab-content").forEach(c =>
+            c.classList.remove("active")
+        );
+
+        // Show selected content
+        document.getElementById(targetId).classList.add("active");
+    });
+});
+
+
 </script>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+const socket = io();  // connect to server
+socket.on("connect", () => {
+    console.log("Connected to socket:", socket.id);
+
+});
+
+socket.on('new_trade_api', trade => {
+    addTradeToBlotter(trade);
+    updateTradingStatsAndHighlight();
+});
+
+    socket.on('order-fill', orderDetails => {
+    updateOrderStatus(orderDetails);
+
+});
+
+</script>
+
 
 
 

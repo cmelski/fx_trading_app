@@ -8,18 +8,15 @@ from utilities.db_common_functions import DB_Common
 @pytest.mark.asyncio
 @pytest.mark.dashboard
 async def test_get_fx_dashboard(page):
-
     assert 'Dashboard' in await page.title()
     await asyncio.sleep(2)
-
 
 
 @pytest.mark.asyncio
 @pytest.mark.stats
 async def test_dashboard_stats(page):
-
-    #total trades
-    trade_rows_blotter = page.locator("table tbody tr")
+    # total trades
+    trade_rows_blotter = page.locator("#spot-blotter table tbody tr")
     trade_count_blotter = await trade_rows_blotter.count()  # FIX: await
     logger.info(f'Trade count blotter: {trade_count_blotter}')
 
@@ -30,7 +27,7 @@ async def test_dashboard_stats(page):
     assert trade_count_stats_text == trade_count_blotter
     await asyncio.sleep(2)
 
-    #last trade
+    # last trade
 
     last_trade_row = trade_rows_blotter.nth(0)
     last_trade_cells = last_trade_row.locator('td')
@@ -44,7 +41,7 @@ async def test_dashboard_stats(page):
 
     assert last_trade_ccy_pair_text == last_trade_ccy_pair_stats_text
 
-    #most frequent ccy pair
+    # most frequent ccy pair
     ccy_pairs = []
     blotter_rows = page.locator('#blotter-body tr')
     blotter_rows_count = await blotter_rows.count()
@@ -76,7 +73,6 @@ async def test_dashboard_stats(page):
 
     logger.info(f'Most frequent pair blotter: {most_frequent}')
 
-
     most_frequent_stats_panel = page.locator('#most-frequent-pair')
     most_frequent_stats = await most_frequent_stats_panel.inner_text()
     most_frequent_stats_list = most_frequent_stats.split(',')
@@ -84,7 +80,7 @@ async def test_dashboard_stats(page):
     logger.info(f'Most frequent pair stats: {most_frequent_stats_list_clean}')
     assert Counter(most_frequent_stats_list_clean) == Counter(most_frequent)
 
-    #largest trade
+    # largest trade
     trade_amounts = []
 
     target_text = "Base Amount"  # <-- the text you're looking for
@@ -102,7 +98,6 @@ async def test_dashboard_stats(page):
         amount_text = await amount.inner_text()
         trade_amounts.append(float(amount_text.replace(',', '')))
 
-
     max_amount = max(trade_amounts)
     logger.info(f'Max amount: {max_amount}')
 
@@ -114,37 +109,78 @@ async def test_dashboard_stats(page):
 
     assert max_amount == largest_trade_stats
 
+    # GUI vs API trades
+    trade_source = []
+    trade_source_panel = page.locator('#trade-source')
+    target_text = 'Source'
+    target_index = None
 
-    # for i in range(trade_count):
-    #     trade_row = trade_rows.nth(i)
-    #
-    #     cells = trade_row.locator("td")
-    #     cell_count = await cells.count()  # FIX: await
-    #
-    #     for j in range(cell_count):
-    #         cell = cells.nth(j)
-    #         text = await cell.inner_text()  # FIX: await
-    #         logger.info(f"Cell[{i},{j}]: {text}")
+    for i in range(count):
+        text = await headers.nth(i).inner_text()
+        if text.strip() == target_text:
+            target_index = i
+            break
+
+    for i in range(blotter_rows_count):
+        row = blotter_rows.nth(i)
+        cells = row.locator('td')
+        source = cells.nth(target_index)
+        source_text = await source.inner_text()
+        trade_source.append(source_text)
+
+    source_counts = Counter(trade_source) #turns into a dictionary
+    sorted_source_counts = dict(sorted(source_counts.items()))
+    source_counts_string = ''
+    for key, value in sorted_source_counts.items():
+        source_counts_string+= f'{key} ({value}), '
+
+    logger.info(f'source counts: {source_counts_string}')
+
+    trade_source_panel_text = await trade_source_panel.inner_text()
+    logger.info(f'source counts panel: {trade_source_panel_text}')
+
+    assert source_counts_string.replace(',','').strip() == trade_source_panel_text.replace(',','').strip()
+
+    #total orders
+
+    total_orders_panel = page.locator('#total-orders')
+    total_orders_panel_text = await total_orders_panel.inner_text()
+
+    logger.info(f'total orders stats panel: {total_orders_panel_text}')
+
+    total_orders_blotter_tab = page.locator('.blotter-tab[data-target="order-blotter"]')
+    total_orders_blotter_tab_text = await total_orders_blotter_tab.inner_text()
+    total_orders_blotter_tab_text_stripped = total_orders_blotter_tab_text.split('(')[1].replace(')', '')
+
+    logger.info(f'total orders blotter tab: {total_orders_blotter_tab_text_stripped}')
+
+    assert total_orders_panel_text == total_orders_blotter_tab_text_stripped
+
+    order_blotter_rows = page.locator('#order-blotter-body tr')
+    order_blotter_rows_count = await order_blotter_rows.count()
+
+    assert int(total_orders_panel_text) == order_blotter_rows_count
+
+
 
 @pytest.mark.asyncio
 @pytest.mark.cards
 async def test_dashboard_cards(page):
+    # verify number of ccy pair cards
 
-    #verify number of ccy pair cards
-
-    #GUI
+    # GUI
     cards = page.locator('div .pair-card')
     cards_count = await cards.count()
     logger.info(f'GUI card count: {cards_count}')
 
-    #DB
+    # DB
 
     ccy_pair_info_db = DB_Common().retrieve_ccy_pairs()
     logger.info(f'DB ccy pair count: {len(ccy_pair_info_db)}')
 
     assert cards_count == len(ccy_pair_info_db)
 
-    #verify max position and current position per ccy pair
+    # verify max position and current position per ccy pair
 
     ccy_pair_card_gui = dict()
 
@@ -169,10 +205,3 @@ async def test_dashboard_cards(page):
     logger.info(f'card info db: {ccy_pair_card_db}')
 
     assert ccy_pair_card_db == ccy_pair_card_gui
-
-
-
-
-
-
-

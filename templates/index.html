@@ -129,15 +129,86 @@ main { flex:1; display:flex; flex-direction:column; padding:0; }
     height:100%;
 }
 
-.blotter table { width:100%; border-collapse:collapse; }
+/* ----------------------------------------
+   MODERN TABLE STYLE
+-----------------------------------------*/
 
-.blotter th, .blotter td {
-    padding:0.5rem 1rem;
-    text-align:center;
-    border-bottom:1px solid #ddd;
+.blotter table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.9rem;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
 }
 
-.blotter th { background-color:#2b3e50; color:white; }
+.blotter th {
+    background: #2b3e50;
+    color: white;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.blotter td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #e6e6e6;
+}
+
+/* Zebra striping */
+.blotter tbody tr:nth-child(even) {
+    background: #f7f9fb;
+}
+
+/* Hover highlight */
+.blotter tbody tr:hover {
+    background: #e8f2ff;
+    transition: background 0.2s;
+}
+
+/* Align numbers right, text center */
+.blotter td:nth-child(6),
+.blotter td:nth-child(7),
+.blotter td:nth-child(9),
+.blotter td:nth-child(13),
+#order-blotter-table td:nth-child(8),
+#order-blotter-table td:nth-child(9),
+#order-blotter-table td:nth-child(11) {
+    text-align: right;
+}
+
+.blotter td,
+.blotter th {
+    border-right: 1px solid #d5dde5;
+}
+
+/* Remove right border on last column */
+.blotter tr > *:last-child {
+    border-right: none;
+}
+
+/* Table shadow + rounded container effect */
+#spot-blotter table,
+#order-blotter table {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border-radius: 10px;
+}
+
+/* Status pill badges */
+.status-pill {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: white;
+}
+
+.status-Completed { background: #28a745; }
+.status-Pending   { background: #ffc107; color: #333; }
+.status-Cancelled { background: #dc3545; }
+.status-Triggered { background: #007bff; }
+
 
 footer {
     text-align:center;
@@ -161,6 +232,22 @@ footer {
 }
 
 .deal-ticket h3 { margin-top:0; text-align:center; color:#2b3e50; }
+
+.order-ticket {
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    background:white;
+    border-radius:10px;
+    padding:1rem 2rem;
+    box-shadow:0 8px 20px rgba(0,0,0,0.3);
+    display:none;
+    z-index:1000;
+    width:300px;
+}
+
+.order-ticket h3 { margin-top:0; text-align:center; color:#2b3e50; }
 
 .flash-green {
     background-color: #28a745 !important;
@@ -217,6 +304,82 @@ footer {
     color: #d20000 !important;     /* red */
     transition: color 0.6s ease;
 }
+    .order-entry {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 1rem 2rem;
+    width: 280px;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    display: none;
+    z-index: 2000;
+}
+.order-entry h3 {
+    text-align: center;
+    margin-top: 0;
+    color: #2b3e50;
+}
+.order-entry input {
+    width: 100%;
+    padding: 0.3rem;
+    margin: 0.35rem 0;
+    font-size: 0.9rem;
+}
+.order-entry button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.blotter-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.blotter-tab {
+    padding: 8px 16px;
+    background: #e3e9f2;
+    border: 1px solid #b8c4d6;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.blotter-tab.active {
+    background: #2b3e50;
+    color: white;
+}
+
+.blotter-tab-content {
+    display: none;
+}
+
+.blotter-tab-content.active {
+    display: block;
+}
+
+    .context-menu {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  display: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 9999;
+}
+
+.context-menu .menu-item {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.context-menu .menu-item:hover {
+  background: #eee;
+}
+
 
 
 </style>
@@ -253,8 +416,9 @@ footer {
                 <div class="pos-right"><div class="fill-right"></div></div>
             </div>
         </div>
-        <span class="tooltiptext">{{v[2]}}</span>
+        <span id="{{k}}-pb-tooltip" class="tooltiptext">{{v[2] | string | format_number}}</span>
     </div>
+    <button type="button" class="open-order-ticket">Order</button>
 
     <select name="direction">
         <option value="Buy">Buy {{k[:3]}}</option>
@@ -280,36 +444,97 @@ footer {
 <p>Last Trade: <span id="last-trade">{% if trades %}{{ trades[-1][3] }}{% else %}None{% endif %}</span></p>
 <p>Most Frequent Ccy Pair: <span id="most-frequent-pair">-</span></p>
 <p>Largest Trade: <span id="largest-trade">-</span></p>
+    <p>Trade Source: <span id="trade-source">-</span></p>
+    <p>Total Orders: <span id="total-orders">{{ orders|length }}</span></p>
+    <p>Order Status: <span id="order-status-stats">-</span></p>
 </div>
 
 </div>
 
 <div class="bottom-section">
-<div class="blotter">
-<h2>Trade Blotter</h2>
-<table>
-<thead>
-<tr>
-<th>Trade ID</th><th>Status</th><th>Timestamp</th><th>Pair</th>
+<section id="blotter">
+
+    <!-- TAB HEADERS -->
+    <div class="blotter-tabs">
+        <button class="blotter-tab active" id="sp-blotter" data-target="spot-blotter">Spot Trades ({{trades|length}})</button>
+        <button class="blotter-tab" data-target="order-blotter">Orders ({{orders|length}})</button>
+    </div>
+
+    <!-- TAB CONTENT: SPOT TRADES -->
+    <div id="spot-blotter" class="blotter-tab-content active">
+        <table>
+            <thead>
+                <tr>
+                    <th>Trade ID</th><th>Status</th><th>Timestamp</th><th>Pair</th>
 <th>Direction</th><th>Base Ccy</th><th>Base Amount</th><th>Counter Ccy</th>
 <th>Counter Amount</th><th>Spot Rate</th><th>Dealt Rate</th><th>Markup (pips)</th><th>Profit</th><th>Source</th>
-</tr>
-</thead>
-<tbody id="blotter-body">
-{% for i in range(0,trades|length) %}
+                    <th>Order ID</th>
+                </tr>
+            </thead>
+            <tbody id="blotter-body">
+                {% for i in range(0,trades|length) %}
 <tr>
 <td>{{trades[i][0]}}</td><td>{{trades[i][1]}}</td><td>{{trades[i][2]}}</td>
 <td>{{trades[i][3]}}</td><td>{{trades[i][4]}}</td><td>{{trades[i][5]}}</td>
-<td>{{trades[i][6]}}</td><td>{{trades[i][7]}}</td>
+<td>{{trades[i][6] | format_number}}</td><td>{{trades[i][7]}}</td>
 <td>{{trades[i][8] | format_number}}</td><td>{{trades[i][9]}}</td>
 <td>{{trades[i][10]}}</td><td>{{trades[i][11]}}</td>
 <td>{{trades[i][12] | format_number}}</td>
-    <td>{{trades[i][13]}}</td>
+    <td class="trade-source">{{trades[i][13]}}</td>
+    <td>{{trades[i][14]}}</td>
 </tr>
 {% endfor %}
-</tbody>
-</table>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- TAB CONTENT: ORDERS -->
+    <div id="order-blotter" class="blotter-tab-content">
+        <table id="order-blotter-table">
+            <thead>
+                <tr>
+                     <th>Order ID</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                    <th>Order Type</th>
+                    <th>Ccy Pair</th>
+                    <th>Direction</th>
+                    <th>Base Ccy</th>
+                    <th>Amount</th>
+                     <th>Outstanding Balance</th>
+                    <th>Counter Ccy</th>
+                    <th>Rate</th>
+                    <th>Level</th>
+                    <th>Reference</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody id="order-blotter-body">
+
+                 {% for i in range(0,orders|length) %}
+            <tr data-id={{orders[i][0]}}>
+<td>{{orders[i][0]}}</td><td class="order-status">{{orders[i][1]}}</td><td>{{orders[i][2]}}</td>
+<td>{{orders[i][3]}}</td><td>{{orders[i][4]}}</td><td>{{orders[i][5]}}</td>
+<td>{{orders[i][6]}}</td><td>{{orders[i][7] | format_number}}</td>
+                <td>{{orders[i][12] | format_number}}</td>
+<td>{{orders[i][8]}}</td><td>{{orders[i][9]}}</td>
+<td>{{orders[i][10]}}</td><td>{{orders[i][13]}}</td><td>{{orders[i][11]}}</td>
+
+</tr>
+{% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Custom Context Menu -->
+<div id="contextMenu" class="context-menu">
+  <div class="menu-item" data-action="fill">Fill Now</div>
+    <div class="menu-item" data-action="suspend">Suspend</div>
+  <div class="menu-item" data-action="cancel">Cancel</div>
 </div>
+
+</section>
+
 </div>
 
 <div class="deal-ticket" id="deal-ticket">
@@ -318,10 +543,45 @@ footer {
 <button id="close-ticket">Close</button>
 </div>
 
+    <div class="order-ticket" id="order-ticket">
+<h3>Order Details</h3>
+<div id="order-content"></div>
+<button id="close-order-ticket">Close</button>
+</div>
+
+
+    <div class="order-entry" id="order-entry">
+         <form method="POST" id="order-entry-form" action="{{ url_for('execute_order')}}" class="order-form" name="order_form">
+    <h3>New Order</h3>
+
+    <div><strong>Pair:</strong> <input type="text" id="oe-pair" name="oe-pair" readonly></div>
+    <div><strong>Rate:</strong> <input type="text" id="oe-rate" name="oe-rate" readonly></div>
+
+    <label>Direction</label>
+    <input type="text" id="oe-direction" name="oe-direction" readonly>
+
+    <label>Level</label>
+    <input type="number" id="oe-level" step="0.0001" name="oe-level">
+
+    <label>Amount</label>
+    <input type="number" id="oe-amount" min="0" name="oe-amount">
+
+                <label>Reference</label>
+    <input type="text" id="oe-reference" name="oe-reference">
+
+    <button id="oe-submit" type="submit">Submit Order</button>
+              </form>
+    <button id="oe-close">Close</button>
+</div>
+
+
+
 </main>
 <footer>FX Spot Trading &copy; 2025</footer>
 
 <script>
+
+
 document.addEventListener("DOMContentLoaded", () => {
     const previousRates = {};  // store last spot rate per pair
 
@@ -363,6 +623,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Expose globally so your ticker update code can call it
     window.updateSpotRate = updateSpotRate;
+
 });
 </script>
 <script>
@@ -386,6 +647,83 @@ function updateCounterAmount(card, dealtRate) {
     const counter = (numeric * dealtRate).toFixed(2);
     counterInput.value = formatWithCommas(counter,2);
 }
+
+function updateOrderStatus(orderDetails) {
+  const table = document.getElementById("order-blotter-table");
+
+    // Extract values
+  const orderId   = String(orderDetails[0]);
+  const newStatus = orderDetails[1]
+  const outstandingBal = orderDetails[2]
+
+  // --- Get column indexes from header ---
+  const headers = [...table.querySelectorAll("thead th")];
+  const orderIdCol = headers.findIndex(h => h.textContent.trim() === "Order ID");
+  const statusCol  = headers.findIndex(h => h.textContent.trim() === "Status");
+  const outstandingBalCol  = headers.findIndex(h => h.textContent.trim() === "Outstanding Balance");
+
+  if (orderIdCol === -1 || statusCol === -1) return;
+
+  // --- Loop through the rows to find the matching Order ID ---
+  const rows = table.querySelectorAll("tbody tr");
+
+  for (const row of rows) {
+    const currentOrderId = row.cells[orderIdCol].textContent.trim();
+    if (currentOrderId === orderId) {
+      // Found the row → update status cell
+      row.cells[statusCol].textContent = newStatus;
+      row.cells[outstandingBalCol].textContent = outstandingBal;
+      break;
+    }
+  }
+}
+
+
+function addTradeToBlotter(trade) {
+    const tbody = document.getElementById('blotter-body');
+    const row = document.createElement('tr');
+
+    row.innerHTML = `
+        <td>${trade[0]}</td>
+        <td>${trade[1]}</td>
+        <td>${trade[2]}</td>
+        <td>${trade[3]}</td>
+        <td>${trade[4]}</td>
+        <td>${trade[5]}</td>
+        <td>${trade[6]}</td>
+        <td>${trade[7]}</td>
+        <td>${trade[8]}</td>
+        <td>${trade[9]}</td>
+        <td>${trade[10]}</td>
+        <td>${trade[11]}</td>
+        <td>${trade[12]}</td>
+           <td class="trade-source">${trade[13]}</td>
+           <td>${trade[14]}</td>
+    `;
+
+    // Add the new row at the top
+    tbody.prepend(row);
+
+    const tradeCount = document.getElementById('sp-blotter').textContent;
+    const numStr = tradeCount.match(/\((\d+)\)/)[1];  // "2"
+    const newNumber = parseInt(numStr, 10) + 1;  // 3
+    document.getElementById("sp-blotter").textContent = `Spot Trades (${newNumber})`;
+
+    const ccyPair = trade[3];
+    const tradeLimit = parseFloat(trade[16])||0;
+    const currentPosition = parseFloat(trade[15])||0;
+
+    updatePositionBar(ccyPair, currentPosition, tradeLimit);
+    document.getElementById(`${trade[3]}-pb-tooltip`).innerText = formatWithCommas(currentPosition,2);
+    attachDealTicket();
+
+
+
+    // Optionally, highlight the new row briefly
+    row.classList.add('flash-green');
+    setTimeout(() => row.classList.remove('flash-green'), 2000);
+}
+
 
 function updateDealtRate(card) {
     const directionSel = card.querySelector('select[name="direction"]');
@@ -475,9 +813,12 @@ document.querySelectorAll('.pair-card').forEach(card=>{
         currentPosition=newPosition;
         card.dataset.currentposition=newPosition;
         updatePositionBar(card.dataset.pair,currentPosition,tradeLimit);
+
         form.submit();
+
     });
 });
+
 
 // ---------------- Deal Ticket ----------------
 const dealTicket = document.getElementById('deal-ticket');
@@ -519,32 +860,126 @@ function attachDealTicket(){
     });
 }
 
+
+// ---------------- Order Ticket ----------------
+const orderTicket = document.getElementById('order-ticket');
+const orderContent = document.getElementById('order-content');
+document.getElementById('close-order-ticket').addEventListener('click',()=>orderTicket.style.display='none');
+window.addEventListener('click', e=>{ if(e.target===orderTicket) orderTicket.style.display='none'; });
+
+function showOrderTicket(order){
+    orderContent.innerHTML=`
+    <p><strong>Order ID:</strong> ${order.id}</p>
+    <p><strong>Status:</strong> ${order.status}</p>
+    <p><strong>Date & Time:</strong> ${order.datetime}</p>
+    <p><strong>Order Type:</strong> ${order.type}</p>
+    <p><strong>Pair:</strong> ${order.pair}</p>
+    <p><strong>Direction:</strong> ${order.direction}</p>
+    <p><strong>Amount:</strong> ${order.amount}</p>
+    <p><strong>Outstanding Balance:</strong> ${order.outstanding}</p>
+    <p><strong>Level:</strong> ${order.level}</p>
+    <p><strong>Reference:</strong> ${order.reference}</p>
+    `;
+    orderTicket.style.display='block';
+}
+
+function attachOrderTicket(){
+    document.querySelectorAll('#order-blotter-body tr').forEach(row=>{
+        row.addEventListener('dblclick',()=>{
+            const cells=row.children;
+            showOrderTicket({
+                id: cells[0].innerText,
+                status: cells[1].innerText,
+                datetime: cells[2].innerText,
+                type: cells[3].innerText,
+                pair: cells[4].innerText,
+                direction: cells[5].innerText,
+                amount:`${cells[7].innerText} (${cells[6].innerText})`,
+                outstanding:`${cells[8].innerText} (${cells[6].innerText})`,
+                level: cells[11].innerText,
+                reference: cells[12].innerText
+            });
+        });
+    });
+}
+
 // ---------------- Trading Stats ----------------
 function updateTradingStatsAndHighlight(){
     const tableRows = document.querySelectorAll("#blotter-body tr");
+    const orderRows = document.querySelectorAll("#order-blotter-body tr");
     document.getElementById("total-trades").innerText = tableRows.length;
-    if(tableRows.length===0){
+    document.getElementById("total-orders").innerText = orderRows.length;
+    if(tableRows.length===0 && orderRows.length===0){
         document.getElementById("last-trade").innerText="-";
         document.getElementById("most-frequent-pair").innerText="-";
         document.getElementById("largest-trade").innerText="-";
+        document.getElementById("trade-source").innerText="-";
+        document.getElementById("order-status-stats").innerText="-";
         return;
     }
-    const newestRow = tableRows[0];
-    const lastTrade = newestRow.querySelector("td:nth-child(4)").innerText.trim();
-    document.getElementById("last-trade").innerText = lastTrade;
 
-    const pairValues = Array.from(tableRows).map(row=>row.querySelector("td:nth-child(4)").innerText.trim());
-    const counts={}; pairValues.forEach(p=>counts[p]=(counts[p]||0)+1);
-    const maxCount = Math.max(...Object.values(counts));
-    const topPairs = Object.keys(counts).filter(pair=>counts[pair]===maxCount);
-    document.getElementById("most-frequent-pair").innerText = topPairs.map(p=>`${p} (${maxCount})`).join(", ");
+     if(tableRows.length>0){
+        const newestRow = tableRows[0];
+        const lastTrade = newestRow.querySelector("td:nth-child(4)").innerText.trim();
+        document.getElementById("last-trade").innerText = lastTrade;
 
-    const amountValues = Array.from(tableRows).map(row=>parseFloat(row.querySelector("td:nth-child(7)").innerText.replace(/,/g,'')));
-    const maxAmount = Math.max(...amountValues);
-    document.getElementById("largest-trade").innerText = `$${formatWithCommas(maxAmount,2)}`;
+        const pairValues = Array.from(tableRows).map(row=>row.querySelector("td:nth-child(4)").innerText.trim());
+        const counts={}; pairValues.forEach(p=>counts[p]=(counts[p]||0)+1);
+        const maxCount = Math.max(...Object.values(counts));
+        const topPairs = Object.keys(counts).filter(pair=>counts[pair]===maxCount);
+        document.getElementById("most-frequent-pair").innerText = topPairs.map(p=>`${p} (${maxCount})`).join(", ");
 
-    newestRow.classList.add("flash-green");
-    setTimeout(()=>newestRow.classList.remove("flash-green"),5000);
+        const amountValues = Array.from(tableRows).map(row=>parseFloat(row.querySelector("td:nth-child(7)").innerText.replace(/,/g,'')));
+        const maxAmount = Math.max(...amountValues);
+        document.getElementById("largest-trade").innerText = `$${formatWithCommas(maxAmount,2)}`;
+
+        const sourceValues = Array.from(document.querySelectorAll("#blotter-body td.trade-source"))
+        .map(td => td.innerText.trim())
+        .filter(s => s !== "");  // remove empty or whitespace-only
+        console.log("Trade source:", sourceValues);
+
+        const sourceCounts={}; sourceValues.forEach(s=>sourceCounts[s]=(sourceCounts[s]||0)+1);
+        console.log("Source counts:", sourceCounts);
+        const tradeSource = sourceCounts;
+        function formatObjectStringAlphabetical(obj) {
+            return Object.keys(obj)
+                .sort()  // alphabetical sort
+                .map(key => `${key} (${obj[key]})`)
+                .join(", ");
+        }
+
+        const tradeSourceOutput = formatObjectStringAlphabetical(tradeSource);
+        document.getElementById("trade-source").innerText = tradeSourceOutput;
+
+        newestRow.classList.add("flash-green");
+        setTimeout(()=>newestRow.classList.remove("flash-green"),5000);
+
+        }
+
+         if(orderRows.length>0){
+            //order status counts
+
+            const orderStatusValues = Array.from(document.querySelectorAll("#order-blotter-body td.order-status"))
+            .map(td => td.innerText.trim())
+            .filter(s => s !== "");  // remove empty or whitespace-only
+            console.log("Order status:", orderStatusValues);
+
+            const orderStatusCounts={}; orderStatusValues.forEach(s=>orderStatusCounts[s]=(orderStatusCounts[s]||0)+1);
+            console.log("Order status counts:", orderStatusCounts);
+            const orderStatus = orderStatusCounts;
+            function formatObjectStringAlphabetical(obj) {
+                return Object.keys(obj)
+                    .sort()  // alphabetical sort
+                    .map(key => `${key} (${obj[key]})`)
+                    .join(", ");
+            }
+
+            const orderStatusOutput = formatObjectStringAlphabetical(orderStatus);
+            document.getElementById("order-status-stats").innerText = orderStatusOutput;
+
+            }
+
+
 }
 
 // ---------------- Update Spot Rates ----------------
@@ -566,12 +1001,175 @@ async function updateRates(){
     } catch(err){ console.error("Failed to fetch rates:", err); }
 }
 
-document.addEventListener("DOMContentLoaded",()=>{
+document.addEventListener("DOMContentLoaded", () => {
     attachDealTicket();
-    updateTradingStatsAndHighlight();
-    setInterval(updateRates,10000);
+    attachOrderTicket();
+    setTimeout(updateTradingStatsAndHighlight, 1); // defer to after render
+    setInterval(updateRates, 10000);
 });
+
+    // -------- ORDER ENTRY WINDOW --------
+const oe = document.getElementById("order-entry");
+const oePair = document.getElementById("oe-pair");
+const oeRate = document.getElementById("oe-rate");
+const oeDir = document.getElementById("oe-direction");
+const oeLevel = document.getElementById("oe-level");
+const oeAmount = document.getElementById("oe-amount");
+const orderForm = document.getElementById("order-entry-form");
+
+document.querySelectorAll(".open-order-ticket").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+        const card = e.target.closest(".pair-card");
+
+
+        const pair = card.dataset.pair;
+        const direction = card.querySelector("select[name='direction']").value;
+        const amount = card.querySelector('.base-amount').value;
+        const rate = document.getElementById(`${pair}-rate`).innerText;
+
+        oePair.value = pair
+        oeRate.value = rate;
+        oeDir.value = direction;
+
+        oeLevel.value = rate;
+        oeAmount.value = amount.replace(/,/g, "");
+
+        oe.style.display = "block";
+
+});
+
+
+});
+
+orderForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const raw = (oeAmount.value || "").trim();
+    const level = (oeLevel.value || "").trim();
+
+    if (!raw) {
+        alert("Enter an order amount before continuing.");
+        return;
+    }
+
+    const amount = parseFloat(unformatNumber(raw));
+    if (isNaN(amount) || amount <= 0) {
+        alert("Order amount must be positive.");
+        return;
+    }
+
+     if (!level) {
+        alert("Enter an order level before continuing.");
+        return;
+    }
+
+    // If valid — submit safely:
+    orderForm.submit();
+});
+
+
+document.getElementById("oe-close").addEventListener("click", () => {
+    oe.style.display = "none";
+});
+
+    // ---------- TAB SWITCHING ----------
+document.querySelectorAll(".blotter-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+
+        // Remove active from all tabs
+        document.querySelectorAll(".blotter-tab").forEach(t =>
+            t.classList.remove("active")
+        );
+        // Add active to clicked tab
+        tab.classList.add("active");
+
+        const targetId = tab.dataset.target;
+
+        // Hide all tab content
+        document.querySelectorAll(".blotter-tab-content").forEach(c =>
+            c.classList.remove("active")
+        );
+
+        // Show selected content
+        document.getElementById(targetId).classList.add("active");
+    });
+});
+
+      const table = document.getElementById("order-blotter-table");
+const menu = document.getElementById("contextMenu");
+let currentRow = null;
+
+// Right-click on row
+table.addEventListener("contextmenu", function (e) {
+    const row = e.target.closest("tr");
+    if (!row) return;
+
+    e.preventDefault();  // block browser menu
+    currentRow = row;
+
+    // position the menu
+    menu.style.top = `${e.pageY}px`;
+    menu.style.left = `${e.pageX}px`;
+    menu.style.display = "block";
+});
+
+// Hide menu when clicking anywhere else
+document.addEventListener("click", () => {
+    menu.style.display = "none";
+});
+
+// Handle menu clicks
+menu.addEventListener("click", function (e) {
+    const action = e.target.dataset.action;
+    const rowId = currentRow.dataset.id;
+
+    fetch(`/order-action`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            id: rowId,
+            action: action
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Server response:", data);
+        // maybe update the UI here
+    });
+
+    updateTradingStatsAndHighlight()
+
+    menu.style.display = "none";
+});
+
 </script>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+const socket = io();  // connect to server
+socket.on("connect", () => {
+    console.log("Connected to socket:", socket.id);
+
+});
+
+socket.on('new_trade_api', trade => {
+    addTradeToBlotter(trade);
+    updateTradingStatsAndHighlight();
+});
+
+    socket.on('order-update', orderDetails => {
+    updateOrderStatus(orderDetails);
+    updateTradingStatsAndHighlight();
+
+});
+
+
+
+
+</script>
+
 
 
 

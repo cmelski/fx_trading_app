@@ -8,6 +8,9 @@ from utilities.db_common_functions import DB_Common
 import pandas as pd
 from pathlib import Path
 
+from utilities.fx_api_utility import FXAPIUtility
+
+
 @pytest.fixture()
 def get_trades_for_input():
     file_path = Path(__file__).parent.parent / "data" / "trades.csv"
@@ -20,16 +23,13 @@ def get_trades_for_input():
         return [{'CcyPair': 'CADSGD', 'Direction': 'Sell', 'Amount': 2000000, 'Markup': 50}]
 
 
-
 @pytest.mark.asyncio
 @pytest.mark.deal
 async def test_deal(page, get_trades_for_input):
-
     for trade in get_trades_for_input:
         currency_pair = trade['CcyPair']
         # clear position
         DB_Common().clear_position(currency_pair)
-
 
     for trade in get_trades_for_input:
 
@@ -38,8 +38,6 @@ async def test_deal(page, get_trades_for_input):
         card = page.locator(f'div.pair-card[data-pair="{ccy_pair_for_trade}"]')
         ccy_pair = await card.get_attribute("data-pair")
         logger.info(f'Ccy Pair: {ccy_pair}')
-
-
 
         # fill in trade info
         direction_for_trade = trade['Direction']
@@ -59,8 +57,7 @@ async def test_deal(page, get_trades_for_input):
         counter_amount_value = await counter_amount.input_value()
         logger.info(f'Counter amount: {counter_amount_value}')
 
-
-        #markup
+        # markup
 
         markup_for_trade = int(trade['Markup'])
 
@@ -80,25 +77,27 @@ async def test_deal(page, get_trades_for_input):
 
         # validate spot rate on trade matches latest spot rate in DB
 
-        #spot_rate_db = DB_Common().get_spot_rate(ccy_pair)
-        #logger.info(f'Spot Rate DB: {spot_rate_db}')
-        #assert "{:,.4f}".format(float(spot_rate_db)) == "{:,.4f}".format(float(rate))
+        # spot_rate_db = DB_Common().get_spot_rate(ccy_pair)
+        # logger.info(f'Spot Rate DB: {spot_rate_db}')
+        # assert "{:,.4f}".format(float(spot_rate_db)) == "{:,.4f}".format(float(rate))
 
         await card.locator('.submit-trade').click()
 
         await asyncio.sleep(2)
 
         # get trade from blotter
-
-        trade_rows_blotter = page.locator("table tbody tr")
+        #await page.locator('button[data-target="spot-blotter"]').click()
+        trade_rows_blotter = page.locator("div #spot-blotter #blotter-body tr")
         trade_count_blotter = await trade_rows_blotter.count()
+        logger.info(f'trade count blotter: {trade_count_blotter}')
         last_trade_row = trade_rows_blotter.nth(0)
         last_trade_cells = last_trade_row.locator('td')
 
-        #get column headings
+        # get column headings
 
-        trade_blotter_headers = page.locator('table th')
+        trade_blotter_headers = page.locator('div #spot-blotter table th')
         trade_blotter_headers_count = await trade_blotter_headers.count()
+        logger.info(f'blotter header count: {trade_blotter_headers_count}')
 
         dealt_counter_amount = 0.00
         blotter_counter_amount = 0.00
@@ -130,7 +129,7 @@ async def test_deal(page, get_trades_for_input):
                 blotter_dealt_rate = await last_trade_cells.nth(index).inner_text()
                 logger.info(f'Blotter Dealt Rate: {blotter_dealt_rate}')
                 if direction[0] == 'Buy':
-                    calc_rate = "{:,.4f}".format(float(rate) + (float(markup_value)/10000))
+                    calc_rate = "{:,.4f}".format(float(rate) + (float(markup_value) / 10000))
                     logger.info(f'Calc Rate: {calc_rate}')
                     dealt_counter_amount = float(base_amount_value.replace(',', '')) * float(calc_rate)
                     logger.info(f'Dealt Counter Amount: {dealt_counter_amount}')
@@ -138,7 +137,7 @@ async def test_deal(page, get_trades_for_input):
 
 
                 else:
-                    calc_rate = "{:,.4f}".format(float(rate) - (float(markup_value)/10000))
+                    calc_rate = "{:,.4f}".format(float(rate) - (float(markup_value) / 10000))
                     logger.info(f'Calc Rate: {calc_rate}')
                     dealt_counter_amount = float(base_amount_value.replace(',', '')) * float(calc_rate)
                     logger.info(f'Dealt Counter Amount: {dealt_counter_amount}')
@@ -149,20 +148,43 @@ async def test_deal(page, get_trades_for_input):
                 blotter_counter_amount = await last_trade_cells.nth(index).inner_text()
                 logger.info(f'Blotter Counter Amount: {blotter_counter_amount}')
 
-
             if header == 'Markup (pips)':
                 index = i
                 blotter_markup = await last_trade_cells.nth(index).inner_text()
                 logger.info(f'Blotter Markup: {blotter_markup}')
                 assert float(blotter_markup) * 10000 == float(markup_value)
 
-        #validate counter amount
+        # validate counter amount
         logger.info('reached here')
         assert float(blotter_counter_amount.replace(',', '')) == dealt_counter_amount
 
-
         await asyncio.sleep(2)
 
+
+@pytest.mark.asyncio
+@pytest.mark.deal_api
+async def test_deal_api(page):
+    trade_data = {
+        "ccy_pair": "CADSGD",
+        "direction": "Buy",
+        "base_ccy": "CAD",
+        "base_amt": "1234.56",
+        "counter_ccy": "SGD",
+        "markup": "48"
+
+    }
+
+    end_point = 'submit_trade'
+
+    result = FXAPIUtility().post(end_point, trade_data)
+    logger.info(result)
+
+    #assert spot rate matches DB:
+
+    spot_rate_api_response = result['trade']['spot_rate']
+    spot_rate_db = DB_Common().get_spot_rate(result['trade']['ccy_pair'])
+
+    assert spot_rate_db == spot_rate_api_response
 
 
 

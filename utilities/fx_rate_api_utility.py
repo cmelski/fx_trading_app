@@ -1,8 +1,6 @@
-import json
-import os
 import requests
 from utilities.logging_utility import logging_format as logger
-from utilities.db_connect import DB_Connect
+
 
 
 class FXRateAPIUtility:
